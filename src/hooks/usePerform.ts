@@ -147,13 +147,20 @@ ${effectText}
         const audienceSystem = AUDIENCE_PROMPTS[currentLevel] || AUDIENCE_PROMPTS[1];
 
         // === 阶段1：AI 观众反应（先显示弹幕） ===
-        // 如果有截图用多模态，否则降级纯文本
+        // 本地模型 gemma-3-4b 对多模态支持可能有限，尝试多模态，失败则降级纯文本
         const hasImages = userContent.length > 1;
-        const audienceResult = await callAI(
-          audienceSystem,
-          hasImages ? userContent : textPrompt,
-          2048,
-        );
+        let audienceResult = '';
+        if (hasImages) {
+          try {
+            audienceResult = await callAI(audienceSystem, userContent, 2048);
+          } catch (imgErr) {
+            // 多模态失败，降级为纯文本
+            console.warn('多模态请求失败，降级为纯文本:', imgErr);
+            audienceResult = await callAI(audienceSystem, textPrompt, 2048);
+          }
+        } else {
+          audienceResult = await callAI(audienceSystem, textPrompt, 2048);
+        }
         const fullReaction = (audienceResult || '').trim();
 
         const isSilence =

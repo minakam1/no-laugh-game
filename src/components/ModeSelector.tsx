@@ -17,7 +17,7 @@ export function ModeSelector({ hasSave, saveData, onContinue, onStart, onEditApi
   const unlockedLevels = useGameStore((s) => s.unlockedLevels);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-game-bg p-4 relative overflow-hidden">
+    <div className="h-full flex items-center justify-center p-4 relative overflow-hidden">
       {/* 扫描线背景 */}
       <div className="absolute inset-0 scanlines pointer-events-none" />
 

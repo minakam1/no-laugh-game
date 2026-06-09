@@ -1,80 +1,38 @@
 # 🎮 游戏自动化测试报告
 
-**测试时间**: 2026-06-05T09:55 UTC
-**测试 URL**: http://localhost:3000
-**测试工具**: Playwright (Chromium, headless)
+**测试时间**: 2026-06-05T12:52:35.738Z
+**测试 URL**: http://localhost:5174
+**截图数量**: 6
 
 ---
 
-## 测试总结
+## 发现的问题
 
-| 指标 | 结果 |
-|------|------|
-| 总测试项 | 8 |
-| 通过 | 8 |
-| 发现问题 | 0 (经诊断均为误报) |
-| 截图数 | 7 |
+✅ 自动化测试未发现明显问题。
 
 ---
 
-## 测试详情
+## 测试覆盖
 
-### 1. ✅ 启动加载
-- 页面标题正确："不许笑 - AI 整活游戏"
-- API 配置弹窗正常渲染
-- 三个输入框（Base URL / API Key / Model）均存在
-
-### 2. ✅ 输入验证
-- 测试连接按钮默认禁用
-- 确认按钮默认禁用
-- 填写 Base URL + Model 后测试按钮自动启用
-
-### 3. ✅ 配置填写
-- 输入框可正常填写
-- 测试连接按钮在信息完整后变为可用
-
-### 4. ✅ localStorage 持久化
-- 填写配置后刷新页面，直接进入菜单页（无需重新配置）
-- URL 和 Model 自动恢复，API Key 也持久化存储
-
-### 5. ✅ 模式选择页
-- 故事模式入口存在，含 5 个难度等级说明
-- 无尽模式入口存在，含难度选择
-
-### 6. ✅ 游戏进入
-- 点击故事模式后可进入游戏界面
-
-### 7. ✅ UI 布局
-- Body overflow: hidden（防止意外滚动）
-- 弹窗 z-index: 50（正确的层级）
-
-### 8. ✅ 移动端响应式 (375x812)
-- 弹窗容器 375x812，overflow-y: auto，可滚动
-- 内部卡片 343x636，内容完整可见
-- 配置页所有元素可正常显示
+| 测试项 | 状态 |
+|--------|------|
+| 启动加载 | ✅ |
+| API 配置页面 | ✅ |
+| 输入验证 | ✅ |
+| localStorage 持久化 | ✅ |
+| 模式选择 | ✅ |
+| 游戏进入 | ✅ |
+| 移动端响应式 | ✅ |
 
 ---
 
 ## 截图列表
 
-| 截图 | 描述 |
-|------|------|
-| 01_boot_config_page.png | 首次启动 - API 配置页 |
-| 02_config_filled.png | 填写配置后 |
-| 03_after_reload.png | localStorage 持久化 - 刷新后直接进菜单 |
-| 04_mode_selector.png | 模式选择页面 |
-| 05_game_started.png | 进入游戏后 |
-| 06_mobile_view.png | 移动端 375px 视图 |
-| 06_mobile_diagnose.png | 移动端深度诊断 |
-
----
-
-## 结论
-
-🎉 **游戏前端核心流程全部通过自动化测试**，未发现阻塞性 Bug。
-
-主要验证通过的场景：
-- 首次启动 → API 配置 → 测试连接 → 确认进入
-- 配置持久化（localStorage）→ 刷新后自动恢复
-- 模式选择（故事/无尽）→ 进入游戏
-- 桌面端和移动端 UI 布局正常
+- ![01_boot_config_page.png](/Users/mimi/CodeBuddy/20260605153337/playtest-screenshots/01_boot_config_page.png)
+- ![02_config_filled.png](/Users/mimi/CodeBuddy/20260605153337/playtest-screenshots/02_config_filled.png)
+- ![03_after_reload.png](/Users/mimi/CodeBuddy/20260605153337/playtest-screenshots/03_after_reload.png)
+- ![04_mode_selector.png](/Users/mimi/CodeBuddy/20260605153337/playtest-screenshots/04_mode_selector.png)
+- ![05_game_started.png](/Users/mimi/CodeBuddy/20260605153337/playtest-screenshots/05_game_started.png)
+- ![05_mobile_view.png](/Users/mimi/CodeBuddy/20260605153337/playtest-screenshots/05_mobile_view.png)
+- ![06_mobile_diagnose.png](/Users/mimi/CodeBuddy/20260605153337/playtest-screenshots/06_mobile_diagnose.png)
+- ![06_mobile_view.png](/Users/mimi/CodeBuddy/20260605153337/playtest-screenshots/06_mobile_view.png)

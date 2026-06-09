@@ -1,0 +1,14 @@
+- generic [ref=e4]:
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e7]: ◈
+      - generic [ref=e8]: NEURO-LINK
+    - generic [ref=e10]: "MODEL: NL-9000"
+  - generic [ref=e15]:
+    - generic [ref=e16]: LOADING
+    - paragraph [ref=e19]: INITIALIZING NEURAL NETWORK...
+  - generic [ref=e20]:
+    - generic [ref=e21]:
+      - generic [ref=e24]: POWER
+      - generic [ref=e27]: SIGNAL
+    - generic [ref=e33]: "S/N: 8X-7729-β"

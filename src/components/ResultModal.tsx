@@ -21,7 +21,6 @@ export function ResultModal({ onBackToMenu }: ResultModalProps) {
 
   if (phase !== 'result') return null;
 
-  const config = DIFFICULTY_CONFIG[currentLevel];
   const totalValue = Math.round(meter.value);
   const passed = totalValue >= PASS_THRESHOLD;
   const isEndless = mode === 'endless';

@@ -49,14 +49,14 @@ export class BootScene extends Phaser.Scene {
 
     for (let x = 0; x <= 1280; x += 80) {
       gfx.moveTo(x, 0);
-      gfx.lineTo(x, 720);
+      gfx.lineTo(x, 960);
     }
-    for (let y = 0; y <= 720; y += 80) {
+    for (let y = 0; y <= 960; y += 80) {
       gfx.moveTo(0, y);
       gfx.lineTo(1280, y);
     }
 
-    gfx.generateTexture('grid-bg', 1280, 720);
+    gfx.generateTexture('grid-bg', 1280, 960);
     gfx.destroy();
   }
 

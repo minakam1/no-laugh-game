@@ -7,6 +7,7 @@ import { useGameStore, loadFromStorageAsync, saveToStorage } from '@/store/gameS
 import { ApiKeyInput, type ApiConfig } from '@/components/ApiKeyInput';
 import { ModeSelector } from '@/components/ModeSelector';
 import { LiveStage } from '@/components/LiveStage';
+import { MonitorFrame } from '@/components/MonitorFrame';
 import type { SaveData } from '@/types';
 
 type AppPhase = 'loading' | 'config' | 'menu' | 'playing';
@@ -85,70 +86,77 @@ export default function App() {
   switch (appPhase) {
     case 'loading':
       return (
-        <div className="h-screen flex items-center justify-center bg-game-bg relative overflow-hidden">
-          {/* 扫描线背景 */}
-          <div className="absolute inset-0 scanlines pointer-events-none" />
-          {/* 背景网格 */}
-          <div
-            className="absolute inset-0 pointer-events-none opacity-[0.03]"
-            style={{
-              backgroundImage: `
-                linear-gradient(var(--accent) 1px, transparent 1px),
-                linear-gradient(90deg, var(--accent) 1px, transparent 1px)
-              `,
-              backgroundSize: '60px 60px',
-            }}
-          />
-          <div className="text-center relative z-10">
-            <div className="font-cyber text-2xl text-accent tracking-[8px] mb-4 animate-neon-flicker">
-              LOADING
+        <MonitorFrame>
+          <div className="h-full flex items-center justify-center relative overflow-hidden">
+            {/* 背景网格 */}
+            <div
+              className="absolute inset-0 pointer-events-none opacity-[0.03]"
+              style={{
+                backgroundImage: `
+                  linear-gradient(var(--accent) 1px, transparent 1px),
+                  linear-gradient(90deg, var(--accent) 1px, transparent 1px)
+                `,
+                backgroundSize: '60px 60px',
+              }}
+            />
+            <div className="text-center relative z-10">
+              <div className="font-cyber text-2xl text-accent tracking-[8px] mb-4 animate-neon-flicker">
+                LOADING
+              </div>
+              <div className="w-48 h-1 bg-game-border mx-auto relative overflow-hidden">
+                <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-accent to-accent-secondary animate-[loadingBar_1.5s_ease-in-out_infinite]" 
+                  style={{ width: '40%' }}
+                />
+              </div>
+              <p className="font-data text-xs text-game-text-dim mt-3 tracking-wider">
+                INITIALIZING NEURAL NETWORK...
+              </p>
             </div>
-            <div className="w-48 h-1 bg-game-border mx-auto relative overflow-hidden">
-              <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-accent to-accent-secondary animate-[loadingBar_1.5s_ease-in-out_infinite]" 
-                style={{ width: '40%' }}
-              />
-            </div>
-            <p className="font-data text-xs text-game-text-dim mt-3 tracking-wider">
-              INITIALIZING NEURAL NETWORK...
-            </p>
           </div>
-        </div>
+        </MonitorFrame>
       );
 
     case 'config':
       return (
-        <ApiKeyInput
-          onConfirm={handleConfigConfirm}
-          savedConfig={apiConfig ?? undefined}
-        />
+        <MonitorFrame>
+          <ApiKeyInput
+            onConfirm={handleConfigConfirm}
+            savedConfig={apiConfig ?? undefined}
+          />
+        </MonitorFrame>
       );
 
     case 'menu':
       return (
-        <ModeSelector
-          hasSave={!!saveData}
-          saveData={saveData}
-          onContinue={handleContinue}
-          onStart={handleStart}
-          onEditApi={handleBackToConfig}
-        />
+        <MonitorFrame>
+          <ModeSelector
+            hasSave={!!saveData}
+            saveData={saveData}
+            onContinue={handleContinue}
+            onStart={handleStart}
+            onEditApi={handleBackToConfig}
+          />
+        </MonitorFrame>
       );
 
     case 'playing':
       return apiConfig ? (
-        <LiveStage
-          apiConfig={apiConfig}
-          onBackToMenu={handleBackToMenu}
-          onBackToConfig={handleBackToConfig}
-        />
+        <MonitorFrame>
+          <LiveStage
+            apiConfig={apiConfig}
+            onBackToMenu={handleBackToMenu}
+            onBackToConfig={handleBackToConfig}
+          />
+        </MonitorFrame>
       ) : (
-        <div className="h-screen flex items-center justify-center bg-game-bg relative">
-          <div className="absolute inset-0 scanlines pointer-events-none" />
-          <div className="text-center relative z-10">
-            <p className="font-cyber text-lg text-danger tracking-wider mb-2">SIGNAL LOST</p>
-            <p className="font-data text-sm text-game-text-dim">配置丢失，请刷新页面</p>
+        <MonitorFrame>
+          <div className="h-full flex items-center justify-center relative">
+            <div className="text-center relative z-10">
+              <p className="font-cyber text-lg text-danger tracking-wider mb-2">SIGNAL LOST</p>
+              <p className="font-data text-sm text-game-text-dim">配置丢失，请刷新页面</p>
+            </div>
           </div>
-        </div>
+        </MonitorFrame>
       );
   }
 }

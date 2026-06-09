@@ -1,6 +1,6 @@
 // ============================================================
 // DanmakuStream — 弹幕滚动区（赛博朋克直播聊天面板风格）
-// 支持预设背景弹幕（淡化显示，不突出）
+// AI 回复弹幕使用 Super Chat 高亮样式，不被刷掉
 // ============================================================
 
 import { useEffect, useRef } from 'react';
@@ -105,45 +105,93 @@ export function DanmakuStream({ list }: DanmakuStreamProps) {
             );
           }
 
+          // AI 回复弹幕：Super Chat 高亮样式，不褪色不被刷
           return (
             <div
               key={i}
               className="animate-danmaku-scroll group"
             >
-              <div className="flex items-start gap-2">
-                {/* 头像 */}
-                <div className={`w-6 h-6 ${avatarColor} rounded-sm shrink-0 flex items-center justify-center mt-0.5`}>
-                  <span className="font-cyber text-[8px] text-game-bg font-bold">
-                    {viewerName.charAt(0)}
-                  </span>
-                </div>
+              {/* Super Chat 卡片：金色渐变边框 + 发光背景 + 入场动画 */}
+              <div className="relative rounded-md overflow-hidden animate-super-chat-enter animate-super-chat-glow">
+                {/* 外发光 */}
+                <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/15 via-amber-400/10 to-yellow-500/15 rounded-md" />
+                {/* 金色边框 */}
+                <div className="absolute inset-0 rounded-md border border-yellow-500/40" />
+                {/* 四角装饰 */}
+                <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-yellow-400/60 rounded-tl" />
+                <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-yellow-400/60 rounded-tr" />
+                <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-yellow-400/60 rounded-bl" />
+                <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-yellow-400/60 rounded-br" />
 
-                {/* 消息内容 */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className="font-data text-[11px] text-accent font-semibold truncate">
-                      {viewerName}
-                    </span>
+                <div className="relative px-3 py-2.5">
+                  {/* 顶栏：Super Chat 标签 + 金额装饰 */}
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-yellow-500/20 border border-yellow-500/30 rounded-sm">
+                        <span className="text-[8px] text-yellow-300">◆</span>
+                        <span className="font-cyber text-[8px] text-yellow-300 tracking-widest">SUPER CHAT</span>
+                      </span>
+                      <span className="font-data text-[9px] text-yellow-400/70 tracking-wider">
+                        ¥{Math.floor(30 + Math.random() * 970).toLocaleString()}
+                      </span>
+                    </div>
                     <span className="font-data text-[9px] text-game-text-dim/50">
                       #{String(item.round).padStart(3, '0')}
                     </span>
                   </div>
-                  <p className="text-sm text-game-text leading-relaxed break-words font-data">
-                    {item.text || '(观众沉默)'}
-                  </p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className={`font-data text-[10px] font-bold ${getScoreColor(item.score)}`}>
-                      ★ {item.score}
-                    </span>
-                    <span className="font-cyber text-[8px] text-game-text-dim/40 tracking-wider">
-                      {getScoreLabel(item.score)}
-                    </span>
+
+                  {/* 用户信息行 */}
+                  <div className="flex items-start gap-2">
+                    {/* 头像 — 金色边框 */}
+                    <div className="relative shrink-0 mt-0.5">
+                      <div className="absolute inset-0 rounded-sm ring-1 ring-yellow-500/50" />
+                      <div className={`w-7 h-7 ${avatarColor} rounded-sm flex items-center justify-center`}>
+                        <span className="font-cyber text-[9px] text-game-bg font-bold">
+                          {viewerName.charAt(0)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* 消息内容 */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="font-data text-[12px] text-yellow-300 font-bold truncate">
+                          {viewerName}
+                        </span>
+                        {/* 高分数徽章 */}
+                        {item.score >= 7 && (
+                          <span className="inline-flex items-center gap-0.5 px-1 py-0.5 bg-yellow-500/20 rounded-sm">
+                            <span className="text-[8px]">⚡</span>
+                            <span className="font-cyber text-[7px] text-yellow-300 tracking-wider">HOT</span>
+                          </span>
+                        )}
+                      </div>
+
+                      {/* 弹幕正文 — 大字号 + 强调色 */}
+                      <p className="text-[15px] text-yellow-100 leading-relaxed break-words font-data font-medium">
+                        {item.text || '(观众沉默)'}
+                      </p>
+
+                      {/* 底栏：分数 + 评价 */}
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <div className="flex items-center gap-1">
+                          <span className={`font-data text-[11px] font-bold ${getScoreColor(item.score)}`}>
+                            ★ {item.score}
+                          </span>
+                          <span className="font-cyber text-[8px] text-game-text-dim/40 tracking-wider">
+                            {getScoreLabel(item.score)}
+                          </span>
+                        </div>
+                        {/* 分隔 */}
+                        <div className="flex-1 h-px bg-yellow-500/15" />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* 分隔线 */}
-              <div className="mt-2 h-px bg-game-border/30" />
+              {/* 间距替代分隔线 */}
+              <div className="mt-2" />
             </div>
           );
         })}

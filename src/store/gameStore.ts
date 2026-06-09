@@ -115,7 +115,6 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (roundIndex < 0 || roundIndex >= rounds.length) return;
 
     const oldRecord = rounds[roundIndex];
-    const actionType = oldRecord.actionType;
     const decayFactor = oldRecord.decayFactor;
     const baseGain = (funnyScore / 10) * 15;
     const actualGain = baseGain * decayFactor;

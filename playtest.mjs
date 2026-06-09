@@ -39,15 +39,15 @@ async function run() {
     // 1. 启动检查：确认 API 配置页面加载
     // =============================================
     console.log('[TEST 1] 启动检查...');
-    await page.goto('http://localhost:3000', { waitUntil: 'networkidle' });
+    await page.goto('http://localhost:5174', { waitUntil: 'networkidle' });
     await page.waitForTimeout(1000);
 
     await screenshot(page, 'boot_config_page');
     const pageTitle = await page.title();
     console.log(`  页面标题: "${pageTitle}"`);
 
-    // 检查 API 配置弹窗是否可见
-    const configModal = await page.$('text=API 配置');
+    // 检查 API 配置弹窗是否可见（赛博朋克风格新标题）
+    const configModal = await page.$('text=SIGNAL CONFIG');
     if (configModal) {
       console.log('  ✅ API 配置页面正常加载');
     } else {
@@ -70,14 +70,16 @@ async function run() {
     else addFinding('MEDIUM', '缺少 Model 输入框', '配置页面未找到 Model 输入框', '查看配置页面');
 
     // 测试按钮是否存在
-    const testBtn = await page.$('button:has-text("测试连接")');
+    const testBtn = await page.$('button:has-text("TEST SIGNAL")');
     if (testBtn) {
       console.log('  ✅ 测试连接按钮存在');
-      const isDisabled = await testBtn.isDisabled();
+      // 页面有默认值(baseUrl和model已预填)，所以测试按钮默认就是可用的
+      // 这是预期行为——本地模型配置已预填，用户可以直接测试
+      const isDisabled = await testBtn.evaluate(el => el.disabled);
       if (isDisabled) {
-        console.log('  ✅ 测试按钮默认禁用（需先填写信息）');
+        console.log('  ✅ 测试按钮已禁用（缺少必填信息）');
       } else {
-        addFinding('LOW', '测试按钮未默认禁用', '未填写信息时测试按钮应该禁用', '进入配置页，不填写任何信息');
+        console.log('  ℹ️ 测试按钮默认可用（本地模型配置已预填）');
       }
     } else {
       addFinding('MEDIUM', '缺少测试连接按钮', '配置页面未找到测试连接按钮', '查看配置页面');
@@ -89,7 +91,7 @@ async function run() {
     console.log('\n[TEST 2] 输入验证...');
 
     // 尝试空表单提交
-    const confirmBtn = await page.$('button:has-text("请先测试连接")');
+    const confirmBtn = await page.$('button:has-text("PLEASE TEST SIGNAL")');
     if (confirmBtn) {
       const isDisabled = await confirmBtn.isDisabled();
       if (isDisabled) {
@@ -99,17 +101,20 @@ async function run() {
       }
     }
 
-    // 填写本地模型配置
+    // 填写本地模型配置（与页面默认值一致）
     console.log('\n[TEST 3] 填写配置...');
     await baseUrlInput.fill('http://127.0.0.1:1234/v1');
-    await modelInput.fill('qwen/qwen3.5-9b');
+    await modelInput.fill('google/gemma-3-4b');
     await page.waitForTimeout(300);
 
     await screenshot(page, 'config_filled');
 
     // 检查测试按钮是否变为可用
-    const testBtnAfterFill = await page.$('button:has-text("测试连接")');
-    const isTestEnabled = !(await testBtnAfterFill.isDisabled());
+    const testBtnAfterFill = await page.$('button:has-text("TEST SIGNAL")');
+    if (!testBtnAfterFill) {
+      addFinding('MEDIUM', '填写信息后测试按钮未找到', '填写配置后测试按钮应可见', '填写配置信息');
+    }
+    const isTestEnabled = testBtnAfterFill ? !(await testBtnAfterFill.evaluate(el => el.disabled)) : false;
     console.log(`  测试按钮可用: ${isTestEnabled}`);
     if (!isTestEnabled) {
       addFinding('LOW', '填写信息后测试按钮未启用', '填写 Base URL 和 Model 后测试按钮应变为可用', '填写配置信息');
@@ -122,9 +127,9 @@ async function run() {
 
     // 模拟提交（不需要真实测试通过，直接设置 localStorage）
     await page.evaluate(() => {
-      localStorage.setItem('apiKey', 'test-key-123');
+      localStorage.setItem('apiKey', '');
       localStorage.setItem('apiBaseUrl', 'http://127.0.0.1:1234/v1');
-      localStorage.setItem('apiModel', 'qwen/qwen3.5-9b');
+      localStorage.setItem('apiModel', 'google/gemma-3-4b');
     });
 
     // 刷新页面验证配置是否恢复
@@ -133,8 +138,8 @@ async function run() {
 
     await screenshot(page, 'after_reload');
 
-    const hasMenu = await page.$('text=故事模式') || await page.$('text=无尽模式');
-    const hasConfig = await page.$('text=API 配置');
+    const hasMenu = await page.$('text=STORY MODE') || await page.$('text=ENDLESS MODE');
+    const hasConfig = await page.$('text=SIGNAL CONFIG');
 
     if (hasMenu) {
       console.log('  ✅ localStorage 持久化生效，刷新后直接进入菜单');
@@ -158,7 +163,7 @@ async function run() {
 
     await page.evaluate(() => {
       localStorage.setItem('apiBaseUrl', 'http://127.0.0.1:1234/v1');
-      localStorage.setItem('apiModel', 'qwen/qwen3.5-9b');
+      localStorage.setItem('apiModel', 'google/gemma-3-4b');
       localStorage.setItem('apiKey', '');
     });
     await page.reload({ waitUntil: 'networkidle' });
@@ -166,9 +171,9 @@ async function run() {
 
     await screenshot(page, 'mode_selector');
 
-    // 检查故事模式按钮（文本可能含 emoji）
-    const storyBtn = await page.$('text=故事模式');
-    const endlessBtn = await page.$('text=无尽模式');
+    // 检查故事模式按钮（赛博朋克风格新文本）
+    const storyBtn = await page.$('text=STORY MODE');
+    const endlessBtn = await page.$('text=ENDLESS MODE');
 
     if (storyBtn) console.log('  ✅ 故事模式入口存在');
     else addFinding('MEDIUM', '缺少故事模式入口', '菜单页未找到故事模式按钮', '进入菜单');
@@ -214,13 +219,13 @@ async function run() {
     // =============================================
     console.log('\n[TEST 8] 移动端响应式...');
     await page.setViewportSize({ width: 375, height: 812 });
-    await page.goto('http://localhost:3000', { waitUntil: 'networkidle' });
+    await page.goto('http://localhost:5174', { waitUntil: 'networkidle' });
     await page.waitForTimeout(1000);
 
     await screenshot(page, 'mobile_view');
 
-    // 检查配置弹窗在小屏是否可用
-    const mobileConfigVisible = await page.$('text=API 配置');
+    // 检查配置弹窗在小屏是否可用（赛博朋克风格标题）
+    const mobileConfigVisible = await page.$('text=SIGNAL CONFIG');
     console.log(`  移动端配置页可见: ${!!mobileConfigVisible}`);
 
     // 检查弹窗是否可滚动
@@ -229,7 +234,7 @@ async function run() {
 
     if (!mobileConfigVisible) {
       // 用 innerText 再确认
-      const hasConfigText = await page.$eval('body', el => el.innerText.includes('API 配置'));
+      const hasConfigText = await page.$eval('body', el => el.innerText.includes('SIGNAL CONFIG'));
       if (hasConfigText) {
         console.log('  ⚠️ 配置页文本存在（可能是 DOM 结构导致选择器未命中）');
       } else {
@@ -249,7 +254,7 @@ async function run() {
 
     let report = `# 🎮 游戏自动化测试报告\n\n`;
     report += `**测试时间**: ${new Date().toISOString()}\n`;
-    report += `**测试 URL**: http://localhost:3000\n`;
+    report += `**测试 URL**: http://localhost:5174\n`;
     report += `**截图数量**: ${screenshotIndex}\n\n`;
 
     report += `---\n\n## 发现的问题\n\n`;

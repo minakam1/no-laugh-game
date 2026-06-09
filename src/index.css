@@ -335,3 +335,343 @@ body {
   0% { left: -40%; }
   100% { left: 100%; }
 }
+
+/* Super Chat 入场动画：金色光从顶部滑入 */
+@keyframes superChatEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+    filter: brightness(1.5);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(0) scale(1.01);
+    filter: brightness(1.2);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: brightness(1);
+  }
+}
+
+/* Super Chat 金色光晕呼吸 */
+@keyframes superChatGlow {
+  0%, 100% {
+    box-shadow:
+      0 0 8px rgba(234, 179, 8, 0.15),
+      inset 0 0 8px rgba(234, 179, 8, 0.05);
+  }
+  50% {
+    box-shadow:
+      0 0 16px rgba(234, 179, 8, 0.25),
+      inset 0 0 16px rgba(234, 179, 8, 0.1);
+  }
+}
+
+.animate-super-chat-enter {
+  animation: superChatEnter 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-super-chat-glow {
+  animation: superChatGlow 3s ease-in-out infinite;
+}
+
+/* ============================================
+   CRT 显示器外边框样式
+   参考：主播女孩重度依赖 / 复古电脑显示器
+   ============================================ */
+
+@layer components {
+  /* 显示器外壳 */
+  .monitor-frame {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    padding: 4px;
+    background: #0d0d15;
+  }
+
+  /* 显示器边框（bezel） */
+  .monitor-bezel {
+    width: 100%;
+    max-width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(
+      180deg,
+      #1a1a28 0%,
+      #141420 5%,
+      #0f0f18 95%,
+      #1a1a28 100%
+    );
+    border-radius: 8px 8px 6px 6px;
+    box-shadow:
+      /* 外发光 */
+      0 0 20px rgba(0, 240, 255, 0.06),
+      0 0 40px rgba(0, 240, 255, 0.03),
+      /* 立体厚度 */
+      inset 0 1px 0 rgba(255, 255, 255, 0.05),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+      /* 底部阴影 */
+      0 10px 20px rgba(0, 0, 0, 0.5);
+    padding: 6px 8px 4px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* 顶部品牌条 */
+  .monitor-brand-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 6px 4px;
+    border-bottom: 1px solid rgba(0, 240, 255, 0.1);
+    margin-bottom: 4px;
+  }
+
+  .monitor-brand-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .monitor-logo {
+    font-size: 14px;
+    color: var(--accent);
+    text-shadow: 0 0 8px var(--accent-glow);
+  }
+
+  .monitor-brand-text {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: var(--accent);
+    text-shadow: 0 0 6px var(--accent-glow);
+  }
+
+  .monitor-brand-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .monitor-model {
+    font-family: 'Rajdhani', monospace;
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: var(--game-text-dim);
+  }
+
+  /* 屏幕区域 */
+  .monitor-screen-area {
+    flex: 1;
+    min-height: 0;
+    background: #020205;
+    border-radius: 2px;
+    padding: 2px;
+    box-shadow:
+      inset 0 0 20px rgba(0, 0, 0, 0.8),
+      inset 0 0 4px rgba(0, 240, 255, 0.1);
+  }
+
+  /* CRT 显像管边缘 */
+  .monitor-crt-edge {
+    width: 100%;
+    height: 100%;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+    background: #000;
+    box-shadow:
+      inset 0 0 20px rgba(0, 0, 0, 0.9),
+      inset 0 0 40px rgba(0, 0, 0, 0.5);
+  }
+
+  /* 屏幕内容 */
+  .monitor-screen-content {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* 屏幕反光 */
+  .monitor-glare {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.03) 0%,
+      transparent 30%,
+      transparent 70%,
+      rgba(255, 255, 255, 0.01) 100%
+    );
+    pointer-events: none;
+    z-index: 10;
+    border-radius: 24px;
+  }
+
+  /* 扫描线 */
+  .monitor-scanlines {
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 240, 255, 0.015) 2px,
+      rgba(0, 240, 255, 0.015) 4px
+    );
+    pointer-events: none;
+    z-index: 11;
+    border-radius: 24px;
+  }
+
+  /* 屏幕曲率阴影 */
+  .monitor-curve-shadow {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      ellipse at center,
+      transparent 50%,
+      rgba(0, 0, 0, 0.4) 90%,
+      rgba(0, 0, 0, 0.6) 100%
+    );
+    pointer-events: none;
+    z-index: 12;
+    border-radius: 24px;
+  }
+
+  /* 底部控制条 */
+  .monitor-control-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 6px 0;
+    margin-top: 4px;
+    border-top: 1px solid rgba(0, 240, 255, 0.08);
+  }
+
+  .monitor-control-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .monitor-power-led,
+  .monitor-signal-led {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .monitor-led-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #ff2a6d;
+    box-shadow:
+      0 0 4px rgba(255, 42, 109, 0.8),
+      0 0 8px rgba(255, 42, 109, 0.4);
+    animation: ledPulse 2s ease-in-out infinite;
+  }
+
+  .monitor-led-signal {
+    background: #05ffa1;
+    box-shadow:
+      0 0 4px rgba(5, 255, 161, 0.8),
+      0 0 8px rgba(5, 255, 161, 0.4);
+    animation: ledPulse 1.5s ease-in-out infinite;
+  }
+
+  .monitor-led-label {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 7px;
+    letter-spacing: 1px;
+    color: var(--game-text-dim);
+  }
+
+  .monitor-control-center {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .monitor-deco-btn {
+    width: 20px;
+    height: 8px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .monitor-deco-btn-active {
+    background: rgba(0, 240, 255, 0.15);
+    border-color: rgba(0, 240, 255, 0.3);
+    box-shadow: 0 0 6px rgba(0, 240, 255, 0.2);
+  }
+
+  .monitor-control-right {
+    display: flex;
+    align-items: center;
+  }
+
+  .monitor-serial {
+    font-family: 'Rajdhani', monospace;
+    font-size: 8px;
+    letter-spacing: 1px;
+    color: rgba(107, 107, 138, 0.5);
+  }
+
+  /* 显示器支架 */
+  .monitor-stand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: -2px;
+  }
+
+  .monitor-stand-neck {
+    width: 60px;
+    height: 24px;
+    background: linear-gradient(
+      90deg,
+      #0f0f18,
+      #1a1a28,
+      #0f0f18
+    );
+    border-left: 1px solid rgba(255, 255, 255, 0.05);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .monitor-stand-base {
+    width: 140px;
+    height: 8px;
+    background: linear-gradient(
+      180deg,
+      #1a1a28,
+      #0f0f18
+    );
+    border-radius: 0 0 4px 4px;
+    box-shadow:
+      0 4px 12px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+}
+
+/* LED 呼吸动画 */
+@keyframes ledPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(0.85);
+  }
+}

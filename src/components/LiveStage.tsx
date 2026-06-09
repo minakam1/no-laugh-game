@@ -14,7 +14,7 @@ import { DanmakuStream, type DanmakuItem } from './DanmakuStream';
 import { AICommentCard } from './AICommentCard';
 import { ResultModal } from './ResultModal';
 import { ErrorBanner } from './ErrorBanner';
-import { generatePresetDanmaku } from '@/data/presetDanmaku';
+import { generatePresetDanmaku, generateEditingDanmaku } from '@/data/presetDanmaku';
 import type { ApiConfig } from './ApiKeyInput';
 
 interface LiveStageProps {
@@ -23,9 +23,30 @@ interface LiveStageProps {
   onBackToConfig: () => void;
 }
 
-/** 预设弹幕间隔：8-15秒随机 */
-const PRESET_INTERVAL_MIN = 8000;
-const PRESET_INTERVAL_MAX = 15000;
+/** 弹幕刷屏曲线参数
+ *  基于当前回合数计算弹幕密度，回合越多弹幕越密集
+ *  round 1: ~1.5秒一条
+ *  round 5: ~0.5秒一条
+ *  round 10+: 可能同时出现多条（爆发式）
+ */
+function getDanmakuInterval(round: number): number {
+  // 基础间隔随回合递减，但有随机抖动
+  // round 1: 1200-1800ms, round 5: 300-700ms, round 10+: 100-400ms
+  const base = Math.max(120, 1800 - round * 160);
+  const jitter = Math.random() * base * 0.6; // 60% 随机抖动
+  return Math.floor(base * 0.4 + jitter);
+}
+
+/** 计算本轮要发射的弹幕数量（爆发机制） */
+function getDanmakuBurstCount(round: number): number {
+  // 低回合：基本单条，偶尔2条
+  // 高回合：可能一次性刷3-5条，模拟弹幕高潮
+  const roll = Math.random();
+  if (round >= 8 && roll > 0.85) return Math.floor(3 + Math.random() * 3); // 8+回合：15%概率爆发3-5条
+  if (round >= 5 && roll > 0.92) return Math.floor(2 + Math.random() * 2); // 5+回合：8%概率爆发2-3条
+  if (roll > 0.75) return 2; // 25%概率双条
+  return 1;
+}
 
 export function LiveStage({ apiConfig, onBackToMenu, onBackToConfig }: LiveStageProps) {
   const bp = useResponsive();
@@ -43,51 +64,67 @@ export function LiveStage({ apiConfig, onBackToMenu, onBackToConfig }: LiveStage
   // usePerform hook
   const { reaction, isLoading, error, handlePerform, dismissError } = usePerform(apiConfig);
 
-  // 预设弹幕状态（仅在 performing 阶段显示）
+  // 预设弹幕状态
   const [presetDanmaku, setPresetDanmaku] = useState<DanmakuItem[]>([]);
   const presetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const presetIdRef = useRef(0);
+  const phaseStartTimeRef = useRef<number>(0);
 
-  /** 生成下一条预设弹幕的随机间隔 */
-  const getNextInterval = useCallback(() => {
-    return Math.floor(PRESET_INTERVAL_MIN + Math.random() * (PRESET_INTERVAL_MAX - PRESET_INTERVAL_MIN));
+  /** 发射一批弹幕（支持爆发） */
+  const fireDanmakuBurst = useCallback((generator: () => string, count: number) => {
+    for (let i = 0; i < count; i++) {
+      // 爆发时稍微错开时间，避免完全同步
+      const delay = i === 0 ? 0 : Math.random() * 150;
+      setTimeout(() => {
+        const text = generator();
+        presetIdRef.current += 1;
+        setPresetDanmaku((prev) => {
+          const next = [...prev, {
+            text,
+            score: 0,
+            round: presetIdRef.current,
+            isPreset: true,
+          }];
+          return next.slice(-80);
+        });
+      }, delay);
+    }
   }, []);
 
-  /** 添加一条预设弹幕 */
-  const addPresetDanmaku = useCallback(() => {
-    const text = generatePresetDanmaku();
-    presetIdRef.current += 1;
-    setPresetDanmaku((prev) => {
-      const next = [...prev, {
-        text,
-        score: 0,
-        round: presetIdRef.current,
-        isPreset: true,
-      }];
-      // 限制最多保留50条预设弹幕
-      return next.slice(-50);
-    });
-  }, []);
-
-  /** 表演阶段自动播放预设弹幕 */
+  /** 自动播放预设弹幕（editing 和 performing 阶段都播放） */
   useEffect(() => {
     // 清除之前的定时器
     if (presetTimerRef.current) {
       clearTimeout(presetTimerRef.current);
       presetTimerRef.current = null;
     }
+    phaseStartTimeRef.current = Date.now();
 
-    // 仅在 performing 阶段播放预设弹幕
     if (phase === 'performing') {
+      // 表演阶段：基于回合数的动态密度
       const scheduleNext = () => {
+        const interval = getDanmakuInterval(currentRound);
+        const burstCount = getDanmakuBurstCount(currentRound);
         presetTimerRef.current = setTimeout(() => {
-          addPresetDanmaku();
+          fireDanmakuBurst(generatePresetDanmaku, burstCount);
           scheduleNext();
-        }, getNextInterval());
+        }, interval);
       };
       scheduleNext();
     } else if (phase === 'editing') {
-      // 进入编辑阶段时清空预设弹幕
+      // 编辑阶段：固定较慢频率（观众等待状态）
+      const scheduleNext = () => {
+        // 编辑阶段：1.5-3秒一条，偶尔双条
+        const interval = 1500 + Math.random() * 1500;
+        const count = Math.random() > 0.85 ? 2 : 1;
+        presetTimerRef.current = setTimeout(() => {
+          fireDanmakuBurst(generateEditingDanmaku, count);
+          scheduleNext();
+        }, interval);
+      };
+      scheduleNext();
+    } else {
+      // 其他阶段清空
       setPresetDanmaku([]);
     }
 
@@ -96,9 +133,10 @@ export function LiveStage({ apiConfig, onBackToMenu, onBackToConfig }: LiveStage
         clearTimeout(presetTimerRef.current);
       }
     };
-  }, [phase, addPresetDanmaku, getNextInterval]);
+  }, [phase, currentRound, fireDanmakuBurst]);
 
   // 合并AI弹幕和预设弹幕（预设弹幕插在中间营造氛围）
+  // Super Chat 逻辑：AI 弹幕始终保留，不被截断刷掉
   const danmakuList = useMemo<DanmakuItem[]>(() => {
     const aiList: DanmakuItem[] = rounds.slice(-100).map((r, i) => ({
       text: r.reaction,
@@ -126,18 +164,34 @@ export function LiveStage({ apiConfig, onBackToMenu, onBackToConfig }: LiveStage
       presetIdx++;
     }
 
-    return mixed.slice(-100);
+    // Super Chat 保护：截断时优先保留 AI 弹幕（非 preset），只裁剪预设弹幕
+    const MAX_TOTAL = 100;
+    if (mixed.length <= MAX_TOTAL) return mixed;
+
+    // 分离 AI 弹幕和预设弹幕
+    const aiItems = mixed.filter((item) => !item.isPreset);
+    const presetItems = mixed.filter((item) => item.isPreset);
+
+    // AI 弹幕最多保留 80 条（给预设弹幕留空间），预设弹幕填充剩余
+    const maxAi = Math.min(aiItems.length, 80);
+    const keptAi = aiItems.slice(-maxAi);
+    const maxPreset = MAX_TOTAL - keptAi.length;
+    const keptPreset = presetItems.slice(-maxPreset);
+
+    // 按原始顺序重新合并
+    const keptSet = new Set([...keptAi, ...keptPreset]);
+    return mixed.filter((item) => keptSet.has(item));
   }, [rounds, presetDanmaku]);
 
   const isMobile = bp === 'mobile';
 
-  // 模拟在线人数
-  const viewerCount = useMemo(() => {
-    return Math.floor(8000 + Math.sin(Date.now() / 10000) * 2000 + Math.random() * 500);
-  }, [rounds.length]);
+  // 模拟在线人数（用 ref 避免 useMemo 中随机数导致无效计算）
+  const [viewerCount] = useState(() =>
+    Math.floor(8000 + Math.sin(Date.now() / 10000) * 2000 + Math.random() * 500)
+  );
 
   return (
-    <div className="h-screen flex flex-col bg-game-bg relative">
+    <div className="h-full flex flex-col bg-game-bg relative">
       {/* 扫描线背景 */}
       <div className="absolute inset-0 scanlines pointer-events-none z-50" />
 

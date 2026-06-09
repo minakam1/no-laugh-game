@@ -17,10 +17,15 @@ interface ApiKeyInputProps {
 
 type TestStatus = 'idle' | 'testing' | 'success' | 'failed';
 
+const LOCAL_DEFAULTS = {
+  baseUrl: 'http://127.0.0.1:1234/v1',
+  model: 'google/gemma-3-4b',
+};
+
 export function ApiKeyInput({ onConfirm, savedConfig }: ApiKeyInputProps) {
   const [apiKey, setApiKey] = useState(savedConfig?.apiKey || '');
-  const [baseUrl, setBaseUrl] = useState(savedConfig?.baseUrl || '');
-  const [model, setModel] = useState(savedConfig?.model || '');
+  const [baseUrl, setBaseUrl] = useState(savedConfig?.baseUrl || LOCAL_DEFAULTS.baseUrl);
+  const [model, setModel] = useState(savedConfig?.model || LOCAL_DEFAULTS.model);
   const [showKey, setShowKey] = useState(false);
   const [testStatus, setTestStatus] = useState<TestStatus>('idle');
   const [testError, setTestError] = useState('');
@@ -132,7 +137,7 @@ export function ApiKeyInput({ onConfirm, savedConfig }: ApiKeyInputProps) {
   }[testStatus];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-game-bg overflow-y-auto">
+    <div className="h-full flex items-center justify-center overflow-y-auto">
       {/* 扫描线背景 */}
       <div className="absolute inset-0 scanlines pointer-events-none" />
 
@@ -154,6 +159,34 @@ export function ApiKeyInput({ onConfirm, savedConfig }: ApiKeyInputProps) {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* 快速配置：本地模型 */}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setBaseUrl(LOCAL_DEFAULTS.baseUrl);
+                setModel(LOCAL_DEFAULTS.model);
+                setApiKey('');
+              }}
+              className="flex-1 py-1.5 border border-accent/40 text-[10px] font-cyber text-accent
+                         hover:bg-accent/10 transition-all tracking-wider"
+            >
+              ◈ LOCAL LLM (127.0.0.1:1234)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setBaseUrl('');
+                setModel('');
+                setApiKey('');
+              }}
+              className="flex-1 py-1.5 border border-game-border text-[10px] font-cyber text-game-text-dim
+                         hover:border-accent-secondary/40 hover:text-accent-secondary transition-all tracking-wider"
+            >
+              ◈ CUSTOM API
+            </button>
+          </div>
+
           {/* API Base URL */}
           <div>
             <label className="cyber-label block mb-2">
@@ -183,7 +216,6 @@ export function ApiKeyInput({ onConfirm, savedConfig }: ApiKeyInputProps) {
                 onChange={(e) => setApiKey(e.target.value)}
                 placeholder="你的 API Key"
                 className="cyber-input w-full rounded-none pr-16"
-                autoFocus
               />
               <button
                 type="button"
@@ -213,7 +245,7 @@ export function ApiKeyInput({ onConfirm, savedConfig }: ApiKeyInputProps) {
               className="cyber-input w-full rounded-none"
             />
             <p className="mt-1.5 text-xs text-game-text-dim/60 font-data">
-              [SUPPORTED] gpt-4o-mini / deepseek-chat / qwen-turbo / glm-4-flash
+              [SUPPORTED] gpt-4o-mini / deepseek-chat / qwen-turbo / glm-4-flash / google/gemma-3-4b
             </p>
           </div>
 
