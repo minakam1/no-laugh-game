@@ -1,0 +1,158 @@
+- generic [ref=e4]:
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e7]: ◈
+      - generic [ref=e8]: NEURO-LINK
+    - generic [ref=e10]: "MODEL: NL-9000"
+  - generic [ref=e116]:
+    - generic [ref=e119]:
+      - generic [ref=e120]:
+        - generic [ref=e121]: LIVE
+        - generic [ref=e124]: 8,322
+        - generic [ref=e126]: SIGNAL
+        - generic [ref=e132]:
+          - generic [ref=e133]: LATENCY
+          - generic [ref=e134]: 12ms
+        - generic [ref=e135]:
+          - generic [ref=e136]: 💰
+          - generic [ref=e137]: "35"
+          - generic [ref=e138]: 头肯
+      - generic [ref=e140]:
+        - generic [ref=e141]:
+          - generic [ref=e142]: ROUND
+          - text: 1/10
+        - generic [ref=e151]:
+          - generic [ref=e152]: "0"
+          - generic [ref=e153]: "15"
+          - generic [ref=e154]: "30"
+        - generic [ref=e155]:
+          - generic [ref=e156]: BREAKDOWN
+          - generic [ref=e157]: 0/30
+      - generic [ref=e158]:
+        - button "EXIT" [ref=e159] [cursor=pointer]
+        - button "SIGNAL" [ref=e160] [cursor=pointer]
+    - generic [ref=e161]:
+      - generic [ref=e162]:
+        - generic [ref=e163]:
+          - generic [ref=e165]: PROPS
+          - generic [ref=e166]: "21"
+        - generic [ref=e167]:
+          - generic [ref=e168]: 余额
+          - generic [ref=e169]: 35 头肯
+        - generic [ref=e171]:
+          - generic "香蕉皮 - 3头肯" [ref=e172]:
+            - generic [ref=e173]: "3"
+            - img "香蕉皮"
+            - generic: 香蕉皮
+          - generic "咖啡杯 - 3头肯" [ref=e174]:
+            - generic [ref=e175]: "3"
+            - img "咖啡杯"
+            - generic: 咖啡杯
+          - generic "胶水地毯 - 4头肯" [ref=e176]:
+            - generic [ref=e177]: "4"
+            - img "胶水地毯"
+            - generic: 胶水地毯
+          - generic "滑板 - 4头肯" [ref=e178]:
+            - generic [ref=e179]: "4"
+            - img "滑板"
+            - generic: 滑板
+          - generic "磁铁地板 - 5头肯" [ref=e180]:
+            - generic [ref=e181]: "5"
+            - img "磁铁地板"
+            - generic: 磁铁地板
+          - generic "弹射板 - 5头肯" [ref=e182]:
+            - generic [ref=e183]: "5"
+            - img "弹射板"
+            - generic: 弹射板
+          - generic "弹跳蘑菇 - 5头肯" [ref=e184]:
+            - generic [ref=e185]: "5"
+            - img "弹跳蘑菇"
+            - generic: 弹跳蘑菇
+          - generic "弹簧拳套 - 6头肯" [ref=e186]:
+            - generic [ref=e187]: "6"
+            - img "弹簧拳套"
+            - generic: 弹簧拳套
+          - generic "烟雾机 - 6头肯" [ref=e188]:
+            - generic [ref=e189]: "6"
+            - img "烟雾机"
+            - generic: 烟雾机
+          - generic "镜子 - 6头肯" [ref=e190]:
+            - generic [ref=e191]: "6"
+            - img "镜子"
+            - generic: 镜子
+          - generic "吹风机 - 6头肯" [ref=e192]:
+            - generic [ref=e193]: "6"
+            - img "吹风机"
+            - generic: 吹风机
+          - generic "定时炸弹 - 8头肯" [ref=e194]:
+            - generic [ref=e195]: "8"
+            - img "定时炸弹"
+            - generic: 定时炸弹
+          - generic "爆炸桶 - 8头肯" [ref=e196]:
+            - generic [ref=e197]: "8"
+            - img "爆炸桶"
+            - generic: 爆炸桶
+          - generic "自行车 - 8头肯" [ref=e198]:
+            - generic [ref=e199]: "8"
+            - img "自行车"
+            - generic: 自行车
+          - generic "呆萌NPC - 8头肯" [ref=e200]:
+            - generic [ref=e201]: "8"
+            - img "呆萌NPC"
+            - generic: 呆萌NPC
+          - generic "喷气背包 - 10头肯" [ref=e202]:
+            - generic [ref=e203]: "10"
+            - img "喷气背包"
+            - generic: 喷气背包
+          - generic "传送门 - 10头肯" [ref=e204]:
+            - generic [ref=e205]: "10"
+            - img "传送门"
+            - generic: 传送门
+          - generic "假天花板 - 12头肯" [ref=e206]:
+            - generic [ref=e207]: "12"
+            - img "假天花板"
+            - generic: 假天花板
+          - generic "反向重力区 - 14头肯" [ref=e208]:
+            - generic [ref=e209]: "14"
+            - img "反向重力区"
+            - generic: 反向重力区
+          - generic "旋转舞台 - 16头肯" [ref=e210]:
+            - generic [ref=e211]: "16"
+            - img "旋转舞台"
+            - generic: 旋转舞台
+          - generic "百变许愿机 - 12头肯" [ref=e212]:
+            - generic [ref=e213]: "12"
+            - generic: 百变许愿机
+        - generic [ref=e214]: 拖拽道具到画布上
+      - generic [ref=e216]:
+        - generic [ref=e217]:
+          - generic [ref=e220]: STAGE // STORY
+          - generic [ref=e221]: LV1 // 快乐小狗
+        - generic [ref=e223]:
+          - generic:
+            - generic:
+              - generic: REC
+            - generic:
+              - generic: STAGE // LIVE
+      - generic [ref=e227]:
+        - generic [ref=e228]:
+          - generic [ref=e231]: LIVE CHAT
+          - generic [ref=e232]: 1 MESSAGES
+        - generic "双击移除" [ref=e234] [cursor=pointer]:
+          - paragraph [ref=e235]:
+            - generic [ref=e236]: "NeonDrifter:"
+            - text: 好耶又开播了！上次的名场面还历历在目
+        - generic [ref=e238]:
+          - generic [ref=e240]: YOU
+          - generic [ref=e242]: 发送弹幕...
+          - button "SEND" [ref=e243] [cursor=pointer]
+    - generic [ref=e246]:
+      - generic [ref=e248]: AI
+      - generic [ref=e249]:
+        - generic [ref=e250]: REFEREE // 快乐小狗
+        - paragraph [ref=e251]: "[ 等待表演信号输入... ]"
+  - generic [ref=e99]:
+    - generic [ref=e100]:
+      - generic [ref=e103]: POWER
+      - generic [ref=e106]: SIGNAL
+    - generic [ref=e112]: "S/N: 8X-7729-β"

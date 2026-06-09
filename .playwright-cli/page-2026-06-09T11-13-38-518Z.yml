@@ -1,0 +1,38 @@
+- generic [ref=e4]:
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e7]: ◈
+      - generic [ref=e8]: NEURO-LINK
+    - generic [ref=e10]: "MODEL: NL-9000"
+  - generic [ref=e15]:
+    - generic [ref=e17]:
+      - heading "SIGNAL CONFIG" [level=2] [ref=e20]
+      - paragraph [ref=e21]: // 配置直播信号源，建立与 AI 裁判的神经网络连接
+    - generic [ref=e22]:
+      - generic [ref=e23]:
+        - button "◈ LOCAL LLM (127.0.0.1:1234)" [ref=e24] [cursor=pointer]
+        - button "◈ CUSTOM API" [ref=e25] [cursor=pointer]
+      - generic [ref=e26]:
+        - generic [ref=e27]: ">> API BASE URL"
+        - textbox "https://api.openai.com/v1 或 http://127.0.0.1:1234/v1" [ref=e28]: http://127.0.0.1:1234/v1
+        - paragraph [ref=e29]: "[INFO] 需要包含 /v1 路径。支持 OpenAI 兼容接口"
+      - generic [ref=e30]:
+        - generic [ref=e31]: ">> API KEY [本地模型可留空]"
+        - generic [ref=e32]:
+          - textbox "你的 API Key" [ref=e33]
+          - button "SHOW" [ref=e34] [cursor=pointer]
+        - paragraph [ref=e35]: "[SECURE] Key 仅保存在当前标签页；生产模式可由云函数环境变量托管"
+      - generic [ref=e36]:
+        - generic [ref=e37]: ">> MODEL ID"
+        - 'textbox "例如: gpt-4o-mini" [ref=e38]': google/gemma-3-4b
+        - paragraph [ref=e39]: "[SUPPORTED] gpt-4o-mini / deepseek-chat / qwen-turbo / glm-4-flash / google/gemma-3-4b"
+      - button "◈ TEST SIGNAL" [ref=e41] [cursor=pointer]
+      - button "PLEASE TEST SIGNAL FIRST" [disabled] [ref=e42]
+    - generic [ref=e43]:
+      - generic [ref=e44]: "SYS_VER: 2.0.77 // CYBER_PUNK_EDITION"
+      - generic [ref=e47]: ONLINE
+  - generic [ref=e48]:
+    - generic [ref=e49]:
+      - generic [ref=e52]: POWER
+      - generic [ref=e55]: SIGNAL
+    - generic [ref=e61]: "S/N: 8X-7729-β"
