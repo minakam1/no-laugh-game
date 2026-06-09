@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -5,48 +7,47 @@
 /* ============================================
    不许笑 - 赛博朋克直播风 CSS 主题变量
    ============================================ */
-
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&display=swap');
-
 :root {
   /* === 背景与表面 === */
-  --game-bg: #050508;
-  --game-surface: #0a0a12;
-  --game-surface-glass: rgba(10, 10, 18, 0.85);
-  --game-border: #1a1a2e;
-  --game-border-bright: #2a2a4a;
+  --game-bg: #070707;
+  --game-surface: #111111;
+  --game-surface-glass: #111111;
+  --game-border: #2b2b2b;
+  --game-border-bright: #e7ff2f;
 
   /* === 文字 === */
-  --game-text: #e0e0f0;
-  --game-text-dim: #6b6b8a;
+  --game-text: #f3f3ea;
+  --game-text-dim: #9a9a8c;
   --game-text-bright: #ffffff;
 
   /* === 霓虹强调色 === */
-  --accent: #00f0ff;
-  --accent-glow: rgba(0, 240, 255, 0.5);
-  --accent-secondary: #ff00a0;
-  --accent-secondary-glow: rgba(255, 0, 160, 0.5);
-  --accent-tertiary: #a855f7;
-  --accent-tertiary-glow: rgba(168, 85, 247, 0.5);
+  --accent: #e7ff2f;
+  --accent-glow: rgba(231, 255, 47, 0.55);
+  --accent-secondary: #ff2d95;
+  --accent-secondary-glow: rgba(255, 45, 149, 0.5);
+  --accent-tertiary: #00e5ff;
+  --accent-tertiary-glow: rgba(0, 229, 255, 0.5);
+  --neo-ink: #000000;
+  --neo-paper: #f5f5e8;
 
   /* === 绷不住值能量条 === */
-  --meter-fill: linear-gradient(90deg, #00f0ff, #ff00a0, #ffd700);
-  --meter-bg: #1a1a2e;
+  --meter-fill: linear-gradient(90deg, #00e5ff, #ff2d95, #e7ff2f);
+  --meter-bg: #000000;
 
   /* === 弹幕 === */
-  --danmaku-bg: rgba(0, 240, 255, 0.06);
+  --danmaku-bg: rgba(231, 255, 47, 0.08);
 
   /* === 状态色 === */
-  --danger: #ff2a6d;
-  --danger-glow: rgba(255, 42, 109, 0.5);
-  --success: #05ffa1;
-  --success-glow: rgba(5, 255, 161, 0.5);
-  --warning: #ffd700;
+  --danger: #ff1744;
+  --danger-glow: rgba(255, 23, 68, 0.5);
+  --success: #00ff85;
+  --success-glow: rgba(0, 255, 133, 0.5);
+  --warning: #ffe600;
 
   /* === 直播元素 === */
-  --live-badge: #ff2a6d;
-  --live-badge-glow: rgba(255, 42, 109, 0.6);
-  --viewer-count: #00f0ff;
+  --live-badge: #ff2d95;
+  --live-badge-glow: rgba(255, 45, 149, 0.6);
+  --viewer-count: #00e5ff;
 
   /* === 字体 === */
   font-family: 'Rajdhani', 'PingFang SC', 'Microsoft YaHei', -apple-system, sans-serif;
@@ -104,7 +105,11 @@ body {
   /* 霓虹边框面板 */
   .cyber-panel {
     background: var(--game-surface-glass);
-    border: 1px solid var(--game-border);
+    border: 3px solid var(--accent);
+    border-radius: 2px;
+    box-shadow:
+      7px 7px 0 var(--neo-ink),
+      10px 10px 0 var(--accent-secondary);
     position: relative;
   }
   .cyber-panel::before {
@@ -113,58 +118,69 @@ body {
     top: 0;
     left: 0;
     right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--accent), transparent);
-    opacity: 0.6;
+    height: 8px;
+    background: repeating-linear-gradient(
+      90deg,
+      var(--accent) 0,
+      var(--accent) 14px,
+      var(--neo-ink) 14px,
+      var(--neo-ink) 20px,
+      var(--accent-secondary) 20px,
+      var(--accent-secondary) 34px,
+      var(--neo-ink) 34px,
+      var(--neo-ink) 40px
+    );
+    opacity: 1;
   }
 
   /* 霓虹发光边框 */
   .cyber-glow-border {
-    border: 1px solid var(--accent);
+    border: 3px solid var(--accent);
     box-shadow:
-      0 0 6px var(--accent-glow),
-      inset 0 0 6px var(--accent-glow);
+      5px 5px 0 var(--neo-ink),
+      8px 8px 0 var(--accent-tertiary);
   }
 
   /* 粉色发光边框 */
   .cyber-glow-border-pink {
-    border: 1px solid var(--accent-secondary);
+    border: 3px solid var(--accent-secondary);
     box-shadow:
-      0 0 6px var(--accent-secondary-glow),
-      inset 0 0 6px var(--accent-secondary-glow);
+      5px 5px 0 var(--neo-ink),
+      8px 8px 0 var(--accent);
   }
 
   /* 直播角标 */
   .live-badge {
     background: var(--live-badge);
-    color: white;
+    color: var(--neo-ink);
     font-family: 'Orbitron', sans-serif;
     font-size: 10px;
     font-weight: 700;
-    letter-spacing: 1px;
+    letter-spacing: 0;
     padding: 2px 8px;
-    border-radius: 2px;
+    border: 2px solid var(--neo-ink);
+    border-radius: 0;
     text-transform: uppercase;
-    box-shadow: 0 0 8px var(--live-badge-glow);
+    box-shadow: 3px 3px 0 var(--neo-ink);
     animation: livePulse 2s ease-in-out infinite;
   }
 
   /* 霓虹文字 */
   .cyber-text-glow {
     text-shadow:
-      0 0 4px var(--accent-glow),
-      0 0 8px var(--accent-glow);
+      2px 2px 0 var(--neo-ink),
+      4px 4px 0 var(--accent-secondary);
   }
   .cyber-text-glow-pink {
     text-shadow:
-      0 0 4px var(--accent-secondary-glow),
-      0 0 8px var(--accent-secondary-glow);
+      2px 2px 0 var(--neo-ink),
+      4px 4px 0 var(--accent);
   }
 
   /* 科幻标题字体 */
   .font-cyber {
     font-family: 'Orbitron', sans-serif;
-    letter-spacing: 2px;
+    letter-spacing: 0;
   }
 
   /* 数据字体 */
@@ -183,8 +199,8 @@ body {
       0deg,
       transparent,
       transparent 2px,
-      rgba(0, 240, 255, 0.02) 2px,
-      rgba(0, 240, 255, 0.02) 4px
+      rgba(231, 255, 47, 0.035) 2px,
+      rgba(231, 255, 47, 0.035) 4px
     );
     pointer-events: none;
     z-index: 1;
@@ -212,81 +228,94 @@ body {
   .cyber-btn {
     font-family: 'Orbitron', sans-serif;
     font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 1.5px;
+    font-weight: 800;
+    letter-spacing: 0;
     text-transform: uppercase;
     padding: 10px 24px;
-    border: 1px solid var(--accent);
-    background: transparent;
-    color: var(--accent);
+    border: 3px solid var(--neo-ink);
+    background: var(--accent);
+    color: var(--neo-ink);
     position: relative;
-    overflow: hidden;
-    transition: all 0.3s ease;
+    overflow: visible;
+    box-shadow: 5px 5px 0 var(--neo-ink);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
     cursor: pointer;
   }
   .cyber-btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, var(--accent-glow), transparent);
-    transition: left 0.5s ease;
+    display: none;
   }
   .cyber-btn:hover::before {
-    left: 100%;
+    left: auto;
   }
   .cyber-btn:hover {
-    background: var(--accent-glow);
-    box-shadow: 0 0 20px var(--accent-glow);
-    color: var(--game-bg);
+    background: var(--accent-tertiary);
+    box-shadow: 2px 2px 0 var(--neo-ink);
+    color: var(--neo-ink);
+    transform: translate(3px, 3px);
   }
   .cyber-btn:active {
-    transform: scale(0.97);
+    transform: translate(5px, 5px);
+    box-shadow: 0 0 0 var(--neo-ink);
   }
 
   /* 粉色霓虹按钮 */
   .cyber-btn-pink {
-    border-color: var(--accent-secondary);
-    color: var(--accent-secondary);
+    background: var(--accent-secondary);
+    color: var(--neo-ink);
   }
   .cyber-btn-pink::before {
-    background: linear-gradient(90deg, transparent, var(--accent-secondary-glow), transparent);
+    display: none;
   }
   .cyber-btn-pink:hover {
-    background: var(--accent-secondary-glow);
-    box-shadow: 0 0 20px var(--accent-secondary-glow);
-    color: white;
+    background: var(--accent);
+    color: var(--neo-ink);
   }
 
   /* 输入框 */
   .cyber-input {
-    background: rgba(5, 5, 8, 0.8);
-    border: 1px solid var(--game-border);
-    color: var(--game-text);
+    background: var(--neo-paper);
+    border: 3px solid var(--neo-ink);
+    color: var(--neo-ink);
     font-family: 'Rajdhani', monospace;
     font-size: 14px;
     padding: 12px 16px;
     outline: none;
-    transition: all 0.3s ease;
+    box-shadow: 4px 4px 0 var(--neo-ink);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
   }
   .cyber-input:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 8px var(--accent-glow), inset 0 0 8px var(--accent-glow);
+    border-color: var(--accent-tertiary);
+    box-shadow: 2px 2px 0 var(--neo-ink), 0 0 0 3px var(--accent);
+    transform: translate(2px, 2px);
   }
   .cyber-input::placeholder {
-    color: var(--game-text-dim);
+    color: #4d4d43;
   }
 
   /* 标签 */
   .cyber-label {
     font-family: 'Orbitron', sans-serif;
     font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 2px;
+    font-weight: 800;
+    letter-spacing: 0;
     text-transform: uppercase;
     color: var(--accent);
+    display: inline-block;
+    background: var(--neo-ink);
+    padding: 2px 6px;
+    border: 2px solid var(--accent);
+  }
+
+  .neo-title {
+    display: inline-block;
+    color: var(--neo-ink);
+    background: var(--accent);
+    border: 4px solid var(--neo-ink);
+    box-shadow:
+      6px 6px 0 var(--accent-secondary),
+      10px 10px 0 var(--neo-ink);
+    padding: 0.08em 0.18em;
+    text-shadow: none;
   }
 
   /* 角装饰 */
@@ -296,19 +325,19 @@ body {
   .cyber-corner::after {
     content: '';
     position: absolute;
-    bottom: -1px;
-    right: -1px;
-    width: 12px;
-    height: 12px;
-    border-right: 2px solid var(--accent);
-    border-bottom: 2px solid var(--accent);
+    bottom: -3px;
+    right: -3px;
+    width: 18px;
+    height: 18px;
+    border-right: 5px solid var(--accent-tertiary);
+    border-bottom: 5px solid var(--accent-tertiary);
   }
 }
 
 /* === 动画 === */
 @keyframes livePulse {
-  0%, 100% { opacity: 1; box-shadow: 0 0 8px var(--live-badge-glow); }
-  50% { opacity: 0.7; box-shadow: 0 0 16px var(--live-badge-glow); }
+  0%, 100% { opacity: 1; box-shadow: 3px 3px 0 var(--neo-ink); }
+  50% { opacity: 0.85; box-shadow: 5px 5px 0 var(--neo-ink); }
 }
 
 @keyframes neonFlicker {
@@ -390,8 +419,10 @@ body {
     align-items: center;
     width: 100%;
     height: 100%;
-    padding: 4px;
-    background: #0d0d15;
+    padding: 8px;
+    background:
+      linear-gradient(135deg, rgba(231, 255, 47, 0.08) 25%, transparent 25%) 0 0 / 18px 18px,
+      var(--game-bg);
   }
 
   /* 显示器边框（bezel） */
@@ -401,24 +432,13 @@ body {
     height: 100%;
     display: flex;
     flex-direction: column;
-    background: linear-gradient(
-      180deg,
-      #1a1a28 0%,
-      #141420 5%,
-      #0f0f18 95%,
-      #1a1a28 100%
-    );
-    border-radius: 8px 8px 6px 6px;
+    background: var(--accent);
+    border: 4px solid var(--neo-ink);
+    border-radius: 0;
     box-shadow:
-      /* 外发光 */
-      0 0 20px rgba(0, 240, 255, 0.06),
-      0 0 40px rgba(0, 240, 255, 0.03),
-      /* 立体厚度 */
-      inset 0 1px 0 rgba(255, 255, 255, 0.05),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.3),
-      /* 底部阴影 */
-      0 10px 20px rgba(0, 0, 0, 0.5);
-    padding: 6px 8px 4px;
+      10px 10px 0 var(--neo-ink),
+      15px 15px 0 var(--accent-secondary);
+    padding: 8px;
     position: relative;
     overflow: hidden;
   }
@@ -428,9 +448,10 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 6px 4px;
-    border-bottom: 1px solid rgba(0, 240, 255, 0.1);
-    margin-bottom: 4px;
+    padding: 5px 8px;
+    border: 3px solid var(--neo-ink);
+    background: var(--neo-ink);
+    margin-bottom: 8px;
   }
 
   .monitor-brand-left {
@@ -442,16 +463,16 @@ body {
   .monitor-logo {
     font-size: 14px;
     color: var(--accent);
-    text-shadow: 0 0 8px var(--accent-glow);
+    text-shadow: none;
   }
 
   .monitor-brand-text {
     font-family: 'Orbitron', sans-serif;
     font-size: 11px;
     font-weight: 700;
-    letter-spacing: 3px;
+    letter-spacing: 0;
     color: var(--accent);
-    text-shadow: 0 0 6px var(--accent-glow);
+    text-shadow: none;
   }
 
   .monitor-brand-right {
@@ -463,27 +484,26 @@ body {
   .monitor-model {
     font-family: 'Rajdhani', monospace;
     font-size: 9px;
-    letter-spacing: 1px;
-    color: var(--game-text-dim);
+    letter-spacing: 0;
+    color: var(--neo-paper);
   }
 
   /* 屏幕区域 */
   .monitor-screen-area {
     flex: 1;
     min-height: 0;
-    background: #020205;
-    border-radius: 2px;
-    padding: 2px;
-    box-shadow:
-      inset 0 0 20px rgba(0, 0, 0, 0.8),
-      inset 0 0 4px rgba(0, 240, 255, 0.1);
+    background: var(--neo-ink);
+    border: 4px solid var(--neo-ink);
+    border-radius: 0;
+    padding: 3px;
+    box-shadow: 4px 4px 0 var(--accent-tertiary);
   }
 
   /* CRT 显像管边缘 */
   .monitor-crt-edge {
     width: 100%;
     height: 100%;
-    border-radius: 4px;
+    border-radius: 0;
     overflow: hidden;
     position: relative;
     background: #000;
@@ -504,16 +524,10 @@ body {
   .monitor-glare {
     position: absolute;
     inset: 0;
-    background: linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.03) 0%,
-      transparent 30%,
-      transparent 70%,
-      rgba(255, 255, 255, 0.01) 100%
-    );
+    background: linear-gradient(135deg, rgba(231, 255, 47, 0.025) 0%, transparent 35%);
     pointer-events: none;
     z-index: 10;
-    border-radius: 24px;
+    border-radius: 0;
   }
 
   /* 扫描线 */
@@ -524,12 +538,12 @@ body {
       0deg,
       transparent,
       transparent 2px,
-      rgba(0, 240, 255, 0.015) 2px,
-      rgba(0, 240, 255, 0.015) 4px
+      rgba(231, 255, 47, 0.02) 2px,
+      rgba(231, 255, 47, 0.02) 4px
     );
     pointer-events: none;
     z-index: 11;
-    border-radius: 24px;
+    border-radius: 0;
   }
 
   /* 屏幕曲率阴影 */
@@ -544,7 +558,7 @@ body {
     );
     pointer-events: none;
     z-index: 12;
-    border-radius: 24px;
+    border-radius: 0;
   }
 
   /* 底部控制条 */
@@ -552,9 +566,9 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 4px 6px 0;
-    margin-top: 4px;
-    border-top: 1px solid rgba(0, 240, 255, 0.08);
+    padding: 6px 8px 0;
+    margin-top: 8px;
+    border-top: 3px solid var(--neo-ink);
   }
 
   .monitor-control-left {
@@ -592,8 +606,9 @@ body {
   .monitor-led-label {
     font-family: 'Orbitron', sans-serif;
     font-size: 7px;
-    letter-spacing: 1px;
-    color: var(--game-text-dim);
+    letter-spacing: 0;
+    color: var(--neo-ink);
+    font-weight: 800;
   }
 
   .monitor-control-center {
@@ -605,15 +620,15 @@ body {
   .monitor-deco-btn {
     width: 20px;
     height: 8px;
-    border-radius: 2px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0;
+    background: var(--neo-paper);
+    border: 2px solid var(--neo-ink);
   }
 
   .monitor-deco-btn-active {
-    background: rgba(0, 240, 255, 0.15);
-    border-color: rgba(0, 240, 255, 0.3);
-    box-shadow: 0 0 6px rgba(0, 240, 255, 0.2);
+    background: var(--accent-tertiary);
+    border-color: var(--neo-ink);
+    box-shadow: 3px 3px 0 var(--neo-ink);
   }
 
   .monitor-control-right {
@@ -624,8 +639,9 @@ body {
   .monitor-serial {
     font-family: 'Rajdhani', monospace;
     font-size: 8px;
-    letter-spacing: 1px;
-    color: rgba(107, 107, 138, 0.5);
+    letter-spacing: 0;
+    color: var(--neo-ink);
+    font-weight: 700;
   }
 
   /* 显示器支架 */
@@ -639,28 +655,19 @@ body {
   .monitor-stand-neck {
     width: 60px;
     height: 24px;
-    background: linear-gradient(
-      90deg,
-      #0f0f18,
-      #1a1a28,
-      #0f0f18
-    );
-    border-left: 1px solid rgba(255, 255, 255, 0.05);
-    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    background: var(--accent);
+    border-left: 4px solid var(--neo-ink);
+    border-right: 4px solid var(--neo-ink);
   }
 
   .monitor-stand-base {
     width: 140px;
     height: 8px;
-    background: linear-gradient(
-      180deg,
-      #1a1a28,
-      #0f0f18
-    );
-    border-radius: 0 0 4px 4px;
+    background: var(--accent-secondary);
+    border: 4px solid var(--neo-ink);
+    border-radius: 0;
     box-shadow:
-      0 4px 12px rgba(0, 0, 0, 0.4),
-      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      7px 7px 0 var(--neo-ink);
   }
 }
 

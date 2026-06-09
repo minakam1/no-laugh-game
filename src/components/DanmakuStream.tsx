@@ -3,7 +3,7 @@
 // AI 回复弹幕使用 Super Chat 高亮样式，不被刷掉
 // ============================================================
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 
 export interface DanmakuItem {
   text: string;
@@ -11,10 +11,13 @@ export interface DanmakuItem {
   round: number;
   /** 是否为预设背景弹幕 */
   isPreset?: boolean;
+  /** 弹幕列表中的索引（用于移除） */
+  _index?: number;
 }
 
 interface DanmakuStreamProps {
   list: DanmakuItem[];
+  onRemove?: (index: number) => void;
 }
 
 // 生成随机观众名
@@ -39,12 +42,27 @@ const getAvatarColor = (round: number) => {
   return avatarColors[round % avatarColors.length];
 };
 
-export function DanmakuStream({ list }: DanmakuStreamProps) {
+const getSuperChatAmount = (item: DanmakuItem): number => {
+  let hash = item.round;
+  for (let i = 0; i < item.text.length; i++) {
+    hash = (hash * 31 + item.text.charCodeAt(i)) | 0;
+  }
+  return 30 + Math.abs(hash % 970);
+};
+
+export function DanmakuStream({ list, onRemove }: DanmakuStreamProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [list.length]);
+
+  const handleDoubleClick = useCallback(
+    (index: number) => {
+      onRemove?.(index);
+    },
+    [onRemove],
+  );
 
   const getScoreColor = (score: number): string => {
     if (score >= 8) return 'text-accent';
@@ -95,7 +113,9 @@ export function DanmakuStream({ list }: DanmakuStreamProps) {
             return (
               <div
                 key={i}
-                className="opacity-30 hover:opacity-60 transition-opacity py-1"
+                className="opacity-30 hover:opacity-60 transition-opacity py-1 cursor-pointer"
+                onDoubleClick={() => handleDoubleClick(i)}
+                title="双击移除"
               >
                 <p className="text-xs text-game-text-dim/60 leading-relaxed break-words font-data">
                   <span className="text-game-text-dim/40 mr-1">{viewerName}:</span>
@@ -109,7 +129,9 @@ export function DanmakuStream({ list }: DanmakuStreamProps) {
           return (
             <div
               key={i}
-              className="animate-danmaku-scroll group"
+              className="animate-danmaku-scroll group cursor-pointer"
+              onDoubleClick={() => handleDoubleClick(i)}
+              title="双击移除"
             >
               {/* Super Chat 卡片：金色渐变边框 + 发光背景 + 入场动画 */}
               <div className="relative rounded-md overflow-hidden animate-super-chat-enter animate-super-chat-glow">
@@ -132,7 +154,7 @@ export function DanmakuStream({ list }: DanmakuStreamProps) {
                         <span className="font-cyber text-[8px] text-yellow-300 tracking-widest">SUPER CHAT</span>
                       </span>
                       <span className="font-data text-[9px] text-yellow-400/70 tracking-wider">
-                        ¥{Math.floor(30 + Math.random() * 970).toLocaleString()}
+                        ¥{getSuperChatAmount(item).toLocaleString()}
                       </span>
                     </div>
                     <span className="font-data text-[9px] text-game-text-dim/50">

@@ -1,0 +1,57 @@
+- generic [ref=e4]:
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e7]: ◈
+      - generic [ref=e8]: NEURO-LINK
+    - generic [ref=e10]: "MODEL: NL-9000"
+  - generic [ref=e115]:
+    - generic [ref=e118]:
+      - generic [ref=e119]:
+        - generic [ref=e120]: LIVE
+        - generic [ref=e123]: 9,478
+      - generic [ref=e125]:
+        - generic [ref=e126]:
+          - generic [ref=e127]: ROUND
+          - text: 1/10
+        - generic [ref=e136]:
+          - generic [ref=e137]: 0%
+          - generic [ref=e138]: 50%
+          - generic [ref=e139]: 100%
+        - generic [ref=e140]:
+          - generic [ref=e141]: BREAKDOWN
+          - generic [ref=e142]: 0/100
+      - generic [ref=e143]:
+        - button "EXIT" [ref=e144] [cursor=pointer]
+        - button "SIGNAL" [ref=e145] [cursor=pointer]
+    - generic [ref=e146]:
+      - generic [ref=e148]:
+        - generic [ref=e149]:
+          - generic [ref=e152]: STAGE // STORY
+          - generic [ref=e153]: LV1 // 快乐小狗
+        - generic [ref=e155]:
+          - generic:
+            - generic:
+              - generic: REC
+            - generic:
+              - generic: STAGE // LIVE
+      - generic [ref=e159]:
+        - generic [ref=e160]:
+          - generic [ref=e163]: LIVE CHAT
+          - generic [ref=e164]: 0 MESSAGES
+        - generic [ref=e166]:
+          - paragraph [ref=e167]: "[ 聊天室为空 ]"
+          - paragraph [ref=e168]: 开始表演，弹幕马上来！
+        - generic [ref=e170]:
+          - generic [ref=e172]: YOU
+          - generic [ref=e174]: 发送弹幕...
+          - button "SEND" [ref=e175] [cursor=pointer]
+    - generic [ref=e178]:
+      - generic [ref=e180]: AI
+      - generic [ref=e181]:
+        - generic [ref=e182]: REFEREE // 快乐小狗
+        - paragraph [ref=e183]: "[ 等待表演信号输入... ]"
+  - generic [ref=e98]:
+    - generic [ref=e99]:
+      - generic [ref=e102]: POWER
+      - generic [ref=e105]: SIGNAL
+    - generic [ref=e111]: "S/N: 8X-7729-β"

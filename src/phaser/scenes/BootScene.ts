@@ -16,6 +16,7 @@ export class BootScene extends Phaser.Scene {
 
     // 加载 UI 资源
     this.createGridTexture();
+    this.createBackgroundTextures();
     this.createButtonTextures();
   }
 
@@ -60,13 +61,66 @@ export class BootScene extends Phaser.Scene {
     gfx.destroy();
   }
 
+  private createBackgroundTextures(): void {
+    // 背景1：暗色纯色背景
+    this.createSolidBg('bg-dark', 0x080810);
+
+    // 背景2：演播室风格（深蓝渐变模拟）
+    this.createStudioBg('bg-studio');
+
+    // 背景3：霓虹暗色
+    this.createNeonBg('bg-neon');
+  }
+
+  private createSolidBg(key: string, color: number): void {
+    const gfx = this.make.graphics({ x: 0, y: 0 });
+    gfx.fillStyle(color, 1);
+    gfx.fillRect(0, 0, 1280, 960);
+    gfx.generateTexture(key, 1280, 960);
+    gfx.destroy();
+  }
+
+  private createStudioBg(key: string): void {
+    const gfx = this.make.graphics({ x: 0, y: 0 });
+    // 深蓝渐变模拟演播室背景
+    gfx.fillGradientStyle(0x0a0a1a, 0x0a0a1a, 0x050510, 0x050510, 1);
+    gfx.fillRect(0, 0, 1280, 960);
+    // 垂直聚光灯效果
+    gfx.fillStyle(0x1a1a3e, 0.3);
+    gfx.fillRect(440, 0, 400, 960);
+    gfx.fillStyle(0x2a2a5e, 0.15);
+    gfx.fillRect(540, 0, 200, 960);
+    gfx.generateTexture(key, 1280, 960);
+    gfx.destroy();
+  }
+
+  private createNeonBg(key: string): void {
+    const gfx = this.make.graphics({ x: 0, y: 0 });
+    gfx.fillStyle(0x050508, 1);
+    gfx.fillRect(0, 0, 1280, 960);
+    // 霓虹网格线
+    gfx.lineStyle(1, 0x1a1a3e, 0.4);
+    for (let x = 0; x <= 1280; x += 160) {
+      gfx.moveTo(x, 0);
+      gfx.lineTo(x, 960);
+    }
+    for (let y = 0; y <= 960; y += 120) {
+      gfx.moveTo(0, y);
+      gfx.lineTo(1280, y);
+    }
+    gfx.generateTexture(key, 1280, 960);
+    gfx.destroy();
+  }
+
   private createButtonTextures(): void {
     // 开始表演按钮 - 霓虹青色
-    this.createNeonButtonTexture('btn-perform', 0x00f0ff, 200, 56);
+    this.createNeonButtonTexture('btn-perform', 0x00f0ff, 180, 48);
     // 撤回按钮 - 霓虹粉色
-    this.createNeonButtonTexture('btn-undo', 0xff00a0, 120, 44);
+    this.createNeonButtonTexture('btn-undo', 0xff00a0, 110, 40);
     // 清空按钮 - 霓虹紫色
-    this.createNeonButtonTexture('btn-clear', 0xa855f7, 120, 44);
+    this.createNeonButtonTexture('btn-clear', 0xa855f7, 110, 40);
+    // 背景切换按钮 - 霓虹黄
+    this.createNeonButtonTexture('btn-bg', 0xe7ff2f, 100, 40);
   }
 
   private createNeonButtonTexture(key: string, color: number, width: number, height: number): void {

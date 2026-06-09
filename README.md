@@ -27,14 +27,14 @@
 ### 2.1 游戏循环
 
 ```
-场景搭建 (玩家) → 生成描述 → AI观众反应 (SSE流式弹幕) → AI裁判评分 → 绷不住值结算 → 下一回合
+场景搭建 (玩家) → 运动关系观察包 → AI观众理解并反应 → AI裁判评分 → 绷不住值结算 → 下一回合
 ```
 
 ### 2.2 双模式设计
 
 | 模式 | 规则 | 目标 |
 |------|------|------|
-| **故事模式** | 5个难度依次挑战，每关10回合 | 每关平均绷不住值达标 → 解锁下一关；5关全通过 = 毕业 |
+| **故事模式** | 5个难度依次挑战，每关10回合 | 10回合累计绷不住值达标 → 解锁下一关；5关全通过 = 毕业 |
 | **无尽模式** | 自选难度，无限回合 | 冲击最高分，练习技巧 |
 
 ### 2.3 绷不住值系统
@@ -42,7 +42,7 @@
 - **基础值**：0-100，每回合根据裁判评分累加
 - **满分增益**：裁判打10分 → +15点（基础公式：`(score/10) × 15`）
 - **笑点衰减**：同类梗重复使用，每次效果递减 `max(0, 1 - 使用次数 × 0.35)`
-- **故事模式通关线**：平均每回合绷不住增益 ≥ 难度要求值
+- **故事模式通关线**：10回合累计绷不住值 ≥ 通关线（当前实现为 30）
 - **胜败反馈**：绷不住值达标的回合有特效动画 + AI观众的特殊反应
 
 ---
@@ -57,7 +57,7 @@
 │  │  场景编辑器   │ → │  直播演出模块  │→ │  绷不住值UI  │ │
 │  │ (Phaser.js)  │   │ (Live Stage) │  │  (HUD)      │ │
 │  └──────────────┘   └──────┬───────┘  └─────────────┘ │
-│                            │ 场景描述文本 + API Key      │
+│                            │ Observation Packet + 配置   │
 └────────────────────────────┼────────────────────────────┘
                              │ HTTPS (TLS)
                              ▼
@@ -65,7 +65,7 @@
 │           腾讯云 SCF 云函数（轻量后端）                   │
 │                                                         │
 │  1. 注入系统提示词（5级难度人格，对玩家隐藏）               │
-│  2. 用玩家 API Key 发起第1次调用（SSE 流式）              │
+│  2. 发起第1次调用（SSE 流式优先，不支持则降级）             │
 │  3. 收集完整回复 → 第2次调用（AI裁判，极短输出）           │
 │  4. 返回 { reaction, funnyScore, reason }               │
 └─────────────────────────────────────────────────────────┘
@@ -80,16 +80,17 @@
 └──────────────────────────────────────────────────────────┘
 ```
 
-### API Key 安全设计
+### API Key 安全设计（开发直连 + 生产代理）
 
 ```
-浏览器 → sessionStorage (仅内存, 关标签即清除)
-       → HTTPS POST body (TLS加密, 不在URL中暴露)
-         → SCF 接收 → 注入提示词 → 转发 AI API
-           → 请求结束 → Key 丢弃，不持久化，不记日志
+本地开发：浏览器 → localhost / 127.0.0.1 OpenAI-compatible API
+生产演示：浏览器 → SCF /api/perform → AI API
+
+API Key：sessionStorage 临时保存；localStorage 只保存 baseUrl、model、Key 后四位 hint
+服务端：可用 SCF 环境变量 AI_API_KEY 托管演示 Key，前端无需持有完整 Key
 ```
 
-**关键防护**：浏览器不持有任何直连 AI API 的代码路径。系统提示词仅存于云函数代码中，玩家抓包无法获取，防止针对性作弊。
+**关键防护**：本地模型保留直连以方便开发；非本地生产演示走云函数代理，系统提示词和服务端 Key 不进入前端长期存储。
 
 ### 3.3 Simulation 与 Rendering 分层设计
 
@@ -151,21 +152,21 @@ interface SaveData {
 - 启动入口：增加"继续游戏"按钮，加载存档恢复进度
 - 安全：不序列化 Phaser Game 实例、不存完整 API Key
 
-### 3.5 通讯层修正：POST + ReadableStream 替代 EventSource
+### 3.5 通讯层修正：POST + ReadableStream + 流式降级
 
 **问题**：旧方案使用 EventSource，只能发 GET 请求，场景描述通过 Query Params 传输。长文本容易触发 URL 长度限制（~8KB），且 API Key 暴露在 URL 中。
 
 **改进**：使用 `fetch + ReadableStream` 手动解析 SSE，通过 POST body 安全传输：
 
 ```
-浏览器 → POST /perform (JSON body: {sceneDesc, level, apiKey})
-       → SCF 注入提示词 → 第1次 AI 调用 (SSE流式)
+浏览器 → POST /perform (JSON body: {observation, level, model, apiKey?})
+       → SCF 注入提示词 → 第1次 AI 调用 (stream:true 优先)
        → SCF 收集完整 reaction → 第2次 AI 裁判调用
-       → SCF 通过同一 SSE 连接返回: {reaction, funnyScore, reason}
+       → SCF 通过同一 SSE 连接返回 reaction_delta / reaction_done / score
        → 一次请求，完整数据
 ```
 
-这同时解决了审查建议 #8（GET传长文本+API Key安全）和 #9（浏览器两次HTTP请求矛盾）。
+如果上游本地 API 不支持 `stream:true` 或多模态输入，则自动降级为普通响应，并由前端逐字播放，保证演示体验稳定。
 
 ---
 
@@ -387,36 +388,44 @@ interface EventStep {
 }
 ```
 
-**场景 → 文字描述（前端完成，关键转换层）：**
+**SceneSnapshot → Motion Relation Graph（只记录运动/关系事实）：**
 
 ```typescript
-// 说明：generateSceneDescription 在浏览器端执行，将 SceneSnapshot 转为自然语言。
-// 转换结果作为 POST body 发送到云函数，避免 GET URL 长度限制。
-// 这段文字的"人话程度"直接决定 AI 观众的反应质量。
-
-function generateSceneDescription(snapshot: SceneSnapshot): string {
-  const setup = snapshot.props.map(p =>
-    `${p.actor || "主播"}在${p.positionDesc}`
-  );
-  const events = snapshot.connections.map(chain => {
-    const steps = chain.steps.map(e => {
-      if (e.type === "collision")
-        return `${e.subject}撞上了${e.target}，导致${e.result}`;
-      if (e.type === "trigger")
-        return `${e.subject}激活了${e.target}，触发了${e.result}`;
-      if (e.type === "reaction")
-        return `${e.subject}对${e.target}的反应是${e.result}`;
-    });
-    return steps.join("，然后");
-  });
-  return `直播间现场：${setup.join("，")}。接下来：${events.join("。紧接着，")}。`;
+interface MotionObject {
+  id: string;
+  type: string;
+  label: string;
+  start: { x: number; y: number; angle: number; scaleX: number; scaleY: number; alpha: number };
+  end: { x: number; y: number; angle: number; scaleX: number; scaleY: number; alpha: number };
+  delta: { x: number; y: number };
+  motion: string[];       // move / rotate / scale_pulse / flicker 等
+  affordances: string[];  // slip / rebound / teleport / spill 等
 }
 
-// 输出示例：
-// "直播间现场：主播站在舞台中央，左边放着弹射板，右边有个端着咖啡的NPC。
-//  接下来：主播踩到香蕉皮后滑行3米撞上弹射板，弹射板将主播弹向NPC，
-//  咖啡泼到了旁边的爆炸桶上，触发了连锁爆炸，爆炸的气浪把屋顶的吊灯震下来砸在弹跳蘑菇上。"
+interface MotionRelation {
+  type: 'near' | 'overlap' | 'moved_toward' | 'moved_away' | 'possible_chain';
+  a?: string;
+  b?: string;
+  sequence?: string[];
+  distance?: number;
+  change?: number;
+  confidence?: number;
+}
+
+interface ObservationPacket {
+  version: number;
+  durationMs: number;
+  graph: {
+    objects: MotionObject[];
+    relations: MotionRelation[];
+    summary: MotionSummary;
+  };
+  effects: string[];
+  capturedAt: number;
+}
 ```
+
+**关键原则**：系统不替玩家生成"主播踩香蕉皮然后爆炸"这样的故事文本，只提供物体前后状态、运动标签、空间关系、可能连锁和截图。幽默、反差、剧情感由 AI 观众自行理解。
 
 ### 5.2 AI 调用系统（fetch + ReadableStream POST，单端点）
 
@@ -452,12 +461,19 @@ const handlePerform = async (snapshot: SceneSnapshot) => {
   setError(null);
 
   try {
-    const sceneDesc = generateSceneDescription(snapshot);
+    const observation = buildObservationPacket({
+      props,
+      chains,
+      before,
+      after,
+      effects,
+      durationMs,
+    });
     const response = await fetch('/api/perform', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        sceneDesc,
+        observation,
         level: currentLevel,
         apiKey,          // Key 在 POST body + TLS，不在 URL 中
       }),
@@ -562,7 +578,7 @@ const DIFFICULTY_MAX_TOKENS = {
 exports.main = async (event) => {
   // SCF API 网关触发器：event.body 是 JSON 字符串，必须 parse
   const body = typeof event.body === 'string' ? JSON.parse(event.body) : event;
-  const { sceneDesc, difficulty, userApiKey } = body;
+  const { observation, difficulty, userApiKey } = body;
 
   // === 第一次调用：AI 观众反应 ===
   const systemPrompt = audience[`lv${difficulty}`];
@@ -571,7 +587,7 @@ exports.main = async (event) => {
   const audienceResult = await callLLM(userApiKey, {
     model: "gpt-4o-mini",
     system: systemPrompt,
-    user: `你正在观看一场直播，主播刚才表演了：${sceneDesc}\n\n请作为直播间观众，用弹幕风格实时反应。`,
+    user: `你正在观看一段道具表演。以下是运动关系观察包：${JSON.stringify(observation)}\n\n请作为直播间观众，自行理解后发弹幕。`,
     stream: false,  // SCF 限流式：收集完整回复后一次性返回
     max_tokens: DIFFICULTY_MAX_TOKENS[difficulty] || 60,
   });
@@ -895,8 +911,8 @@ function LiveStage() {
     })),
   [rounds]);
 
-  // 注意：handlePerform 接收 SceneSnapshot → 内部调用 generateSceneDescription
-  // → 生成自然语言描述 → POST 到云函数 → 接收 reaction + score → submitResult
+  // 注意：handlePerform 接收 Observation Packet
+  // → 发送运动/关系事实与截图 → 接收 reaction + score → submitResult
   const handlePerform = async (snapshot: SceneSnapshot) => {
     if (isLoading) return;  // 前端拦截双击（#10）
     abortRef.current?.abort();
@@ -931,8 +947,8 @@ function LiveStage() {
 | 样式 | Tailwind CSS 3.4 + CSS 变量主题 | 直播间 UI + 移动端适配 |
 | 后端 | 腾讯云 SCF (Node.js 18) | 提示词保护 + AI 代理 |
 | 部署 | CloudStudio / EdgeOne Pages | 比赛指定 |
-| AI 接入 | 玩家自填 API Key (OpenAI 兼容) | 云函数代理，零直连 |
-| 流式传输 | fetch + ReadableStream (POST) | 替代 EventSource，单端点返回完整数据 |
+| AI 接入 | OpenAI 兼容接口 | 本地开发直连；生产演示走云函数代理 |
+| 流式传输 | fetch + ReadableStream (POST) | `reaction_delta` 真流式优先；不支持则逐字降级 |
 | 持久化 | localStorage + IndexedDB | 存档系统 |
 
 ---
@@ -946,18 +962,18 @@ Browser (fetch POST)         SCF                         AI API
   │                           │                            │
   │── POST /perform ────────→│                            │
   │   JSON body:              │                            │
-  │   {sceneDesc,lv,apiKey}   │                            │
+  │   {observation,lv,model}  │                            │
   │                           │── POST /chat ────────────→│
   │                           │   stream:true              │
   │                           │   系统提示词(难度人格)       │
   │                           │                            │
   │                           │←── SSE token 1 ──────────│  ~800ms 首token
   │←── ReadableStream chunk ─│                            │
-  │    data: "哈"             │                            │
+  │    reaction_delta: "哈"   │                            │
   │←── ReadableStream chunk ─│←── SSE token 2 ──────────│
   │←── ReadableStream chunk ─│←── SSE token 3 ──────────│
   │  ...弹幕逐字渲染...        │  ...                      │
-  │←── data: [REACTION_DONE] │←── SSE [DONE] ──────────│
+  │←── reaction_done ────────│←── SSE [DONE] ──────────│
   │                           │                            │
   │                           │── POST /chat ────────────→│  第2次调用
   │                           │   stream:false             │
@@ -965,9 +981,8 @@ Browser (fetch POST)         SCF                         AI API
   │                           │←── JSON ─────────────────│  ~300ms
   │                           │   {"funny_score":7,...}    │
   │                           │                            │
-  │←── 同一连接返回 JSON ────│                            │  单次请求完成
-  │    {reaction, score,       │                            │
-  │     reason}                │                            │
+  │←── score ────────────────│                            │  单次请求完成
+  │    {funnyScore, reason}   │                            │
 ```
 
 **关键改进（对比 v2.0）**：
@@ -1295,9 +1310,11 @@ export interface SaveData {
 
 // ============ API 通讯 ============
 export interface PerformRequest {
-  sceneDesc: string;          // 场景自然语言描述（前端生成）
+  observation: ObservationPacket; // 运动关系观察包（前端生成）
   level: number;              // 1-5
-  apiKey: string;             // 用户 API Key
+  apiKey?: string;            // 可选；生产演示可由 SCF 环境变量提供
+  baseUrl?: string;           // OpenAI 兼容 API Base URL
+  model?: string;             // 模型 ID
 }
 
 export interface PerformResponse {

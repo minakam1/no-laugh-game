@@ -2,7 +2,8 @@
 // ModeSelector — 模式选择组件（赛博朋克直播间主页风格）
 // ============================================================
 
-import { useGameStore, DIFFICULTY_CONFIG } from '@/store/gameStore';
+import { useState, useEffect } from 'react';
+import { useGameStore, DIFFICULTY_CONFIG, PASS_THRESHOLD } from '@/store/gameStore';
 import type { SaveData } from '@/types';
 
 interface ModeSelectorProps {
@@ -15,15 +16,95 @@ interface ModeSelectorProps {
 
 export function ModeSelector({ hasSave, saveData, onContinue, onStart, onEditApi }: ModeSelectorProps) {
   const unlockedLevels = useGameStore((s) => s.unlockedLevels);
+  const bestScores = useGameStore((s) => s.bestScores);
+  const endlessHighScore = useGameStore((s) => s.endlessHighScore);
+
+  // 基于历史最佳成绩计算观众基数（分数越高观众越多）
+  const maxBestScore = Math.max(0, ...Object.values(bestScores));
+  const topScore = Math.max(maxBestScore, endlessHighScore);
+  const baseViewers = 1000 + topScore * 300; // 0分→1000, 30分→10000, 100分→31000
+
+  // ---- 观众数波动（基于历史分数 + 大幅随机，允许减少）----
+  const [viewerCount, setViewerCount] = useState(() =>
+    Math.floor(baseViewers + (Math.random() - 0.5) * 400)
+  );
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const target = baseViewers;
+      setViewerCount((prev) => {
+        const drift = (target - prev) * 0.2;
+        // 大幅随机：可能暴增也可能暴跌
+        const roll = Math.random();
+        let jitter: number;
+        if (roll > 0.92) {
+          jitter = -Math.floor(Math.random() * 1500); // 8% 概率暴跌 0~1500
+        } else if (roll > 0.85) {
+          jitter = Math.floor(Math.random() * 2000);   // 7% 概率暴涨 0~2000
+        } else {
+          jitter = Math.floor((Math.random() - 0.5) * 600); // 正常波动 ±300
+        }
+        return Math.max(100, Math.min(99999, Math.round(prev + drift + jitter)));
+      });
+    }, 3000 + Math.random() * 2000);
+    return () => clearInterval(interval);
+  }, [baseViewers]);
+
+  // ---- SIGNAL 信号强度波动 ----
+  const [signalBars, setSignalBars] = useState(4);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // 大部分时间4格，偶尔掉到3或2格，极少掉到1格
+      const roll = Math.random();
+      if (roll > 0.85) setSignalBars(3);
+      else if (roll > 0.96) setSignalBars(2);
+      else if (roll > 0.99) setSignalBars(1);
+      else setSignalBars(4);
+    }, 2000 + Math.random() * 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // ---- LATENCY 延迟波动 ----
+  const [latency, setLatency] = useState(12);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // 在 8~28ms 之间波动
+      const newLatency = Math.floor(8 + Math.random() * 20);
+      setLatency(newLatency);
+    }, 1500 + Math.random() * 2000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
-    <div className="h-full flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="h-full flex items-start justify-center p-3 md:p-4 relative overflow-y-auto overflow-x-hidden">
+      {/* 左侧背景图 — bg1 的左半 */}
+      <div
+        className="absolute left-0 top-0 bottom-0 w-3/5 pointer-events-none z-0"
+        style={{
+          backgroundImage: 'url(/bg-left.png)',
+          backgroundSize: 'auto 100%',
+          backgroundPosition: 'left center',
+          backgroundRepeat: 'no-repeat',
+          opacity: 0.3,
+        }}
+      />
+      {/* 右侧背景图 — bg1 的右半 */}
+      <div
+        className="absolute right-0 top-0 bottom-0 w-3/5 pointer-events-none z-0"
+        style={{
+          backgroundImage: 'url(/bg-right.png)',
+          backgroundSize: 'auto 100%',
+          backgroundPosition: 'right center',
+          backgroundRepeat: 'no-repeat',
+          opacity: 0.3,
+        }}
+      />
+
       {/* 扫描线背景 */}
-      <div className="absolute inset-0 scanlines pointer-events-none" />
+      <div className="absolute inset-0 scanlines pointer-events-none z-[1]" />
 
       {/* 背景装饰网格 */}
       <div
-        className="absolute inset-0 pointer-events-none opacity-[0.03]"
+        className="absolute inset-0 pointer-events-none opacity-[0.03] z-[1]"
         style={{
           backgroundImage: `
             linear-gradient(var(--accent) 1px, transparent 1px),
@@ -33,7 +114,7 @@ export function ModeSelector({ hasSave, saveData, onContinue, onStart, onEditApi
         }}
       />
 
-      <div className="max-w-2xl w-full space-y-6 relative z-10">
+      <div className="max-w-lg w-full space-y-4 md:space-y-5 py-2 relative z-10">
         {/* === 直播间标题区 === */}
         <div className="cyber-panel cyber-corner p-6 text-center relative overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-accent-secondary via-accent to-accent-secondary" />
@@ -47,15 +128,19 @@ export function ModeSelector({ hasSave, saveData, onContinue, onStart, onEditApi
           <div className="absolute top-3 right-3 flex items-center gap-1.5">
             <div className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
             <span className="font-data text-xs text-viewer-count">
-              {Math.floor(Math.random() * 5000 + 10000).toLocaleString()} VIEWERS
+              {viewerCount.toLocaleString()} VIEWERS
             </span>
           </div>
 
-          {/* 主标题 */}
-          <h1 className="font-cyber text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-accent via-accent-secondary to-accent-tertiary mt-6 mb-3 tracking-wider animate-neon-flicker">
-            不许笑
-          </h1>
-          <p className="font-data text-lg text-game-text-dim tracking-wide">
+          {/* 主标题 - Logo */}
+          <div className="mt-6 mb-5 flex justify-center">
+            <img
+              src="/logo.png"
+              alt="不许笑"
+              className="h-32 md:h-36 object-contain"
+            />
+          </div>
+          <p className="font-data text-lg text-game-text-bright">
             // 玩家搭场景 · AI 当观众 · 绷不住了算我输
           </p>
 
@@ -65,14 +150,19 @@ export function ModeSelector({ hasSave, saveData, onContinue, onStart, onEditApi
               <span className="font-data text-[10px] text-game-text-dim">SIGNAL</span>
               <div className="flex gap-0.5">
                 {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="w-1 h-3 bg-success rounded-sm" />
+                  <div
+                    key={i}
+                    className={`w-1 h-3 rounded-sm transition-all duration-300 ${
+                      i <= signalBars ? 'bg-success' : 'bg-game-border/30'
+                    }`}
+                  />
                 ))}
               </div>
             </div>
             <div className="w-px h-4 bg-game-border" />
             <div className="flex items-center gap-1.5">
               <span className="font-data text-[10px] text-game-text-dim">LATENCY</span>
-              <span className="font-data text-[10px] text-accent">12ms</span>
+              <span className="font-data text-[10px] text-accent">{latency}ms</span>
             </div>
             <div className="w-px h-4 bg-game-border" />
             <div className="flex items-center gap-1.5">
@@ -136,21 +226,23 @@ export function ModeSelector({ hasSave, saveData, onContinue, onStart, onEditApi
                   className={`w-full py-3 px-4 text-left flex items-center justify-between font-data
                     border transition-all ${
                     locked
-                      ? 'border-game-border/30 bg-game-bg/30 text-game-text-dim/30 cursor-not-allowed'
-                      : 'border-game-border hover:border-accent-secondary hover:bg-accent-secondary/5 text-game-text'
+                      ? 'border-game-border/20 bg-game-bg/20 text-game-text-dim/30 cursor-not-allowed'
+                      : 'border-accent-secondary/40 bg-accent-secondary/5 text-game-text-bright hover:border-accent-secondary hover:bg-accent-secondary/10'
                     }`}
                 >
-                  <span className="flex items-center gap-3">
-                    <span className="font-cyber text-xs text-game-text-dim">
+                  <span className="flex items-center gap-3 min-w-0">
+                    <span className={`font-cyber text-xs shrink-0 min-w-[64px] ${
+                      locked ? 'text-game-text-dim/30' : 'text-accent-secondary'
+                    }`}>
                       STAGE {String(lv).padStart(2, '0')}
                     </span>
-                    <span>{config.name}</span>
+                    <span className="truncate">{config.name}</span>
                   </span>
                   {locked ? (
-                    <span className="text-xs font-cyber">LOCKED</span>
+                    <span className="text-xs font-cyber shrink-0 ml-2 text-game-text-dim/30">LOCKED</span>
                   ) : (
-                    <span className="text-xs text-game-text-dim">
-                      TARGET ≥{config.targetAvgScore}
+                    <span className="text-xs text-accent-secondary shrink-0 ml-2 font-cyber">
+                      TARGET ≥{PASS_THRESHOLD}
                     </span>
                   )}
                 </button>
@@ -206,7 +298,7 @@ export function ModeSelector({ hasSave, saveData, onContinue, onStart, onEditApi
         {/* === 底部信息 === */}
         <div className="flex items-center justify-between pt-2">
           <span className="font-data text-[10px] text-game-text-dim tracking-wider">
-            CHANNEL: #BU_XU_XIAO // CYBER_PUNK_EDITION v2.0
+            CHANNEL: #BU_XU_XIAO // NEO_BRUTAL_SIGNAL v2.0
           </span>
           <div className="flex items-center gap-2">
             <div className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />

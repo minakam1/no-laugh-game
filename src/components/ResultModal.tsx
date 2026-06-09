@@ -43,6 +43,29 @@ export function ResultModal({ onBackToMenu }: ResultModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+      {/* 左侧背景图 — bgwin 的左半 */}
+      <div
+        className="absolute left-0 top-0 bottom-0 w-3/5 pointer-events-none"
+        style={{
+          backgroundImage: 'url(/bgwin-left.png)',
+          backgroundSize: 'auto 100%',
+          backgroundPosition: 'left center',
+          backgroundRepeat: 'no-repeat',
+          opacity: 0.25,
+        }}
+      />
+      {/* 右侧背景图 — bgwin 的右半 */}
+      <div
+        className="absolute right-0 top-0 bottom-0 w-3/5 pointer-events-none"
+        style={{
+          backgroundImage: 'url(/bgwin-right.png)',
+          backgroundSize: 'auto 100%',
+          backgroundPosition: 'right center',
+          backgroundRepeat: 'no-repeat',
+          opacity: 0.25,
+        }}
+      />
+
       {/* 扫描线 */}
       <div className="absolute inset-0 scanlines pointer-events-none" />
 
@@ -74,6 +97,23 @@ export function ResultModal({ onBackToMenu }: ResultModalProps) {
                 ? 'STAGE CLEARED'
                 : 'STAGE FAILED'}
           </h2>
+          {passed && !isEndless && currentLevel < 5 && (
+            <div className="mt-3 py-2 px-4 border border-accent-secondary/40 bg-accent-secondary/5 animate-fade-in">
+              <div className="flex items-center justify-center gap-2">
+                <div className="w-2 h-2 bg-accent-secondary rounded-full animate-pulse" />
+                <span className="font-cyber text-xs text-accent-secondary tracking-wider">
+                  ◈ AI DETECTED ◈
+                </span>
+                <div className="w-2 h-2 bg-accent-secondary rounded-full animate-pulse" />
+              </div>
+              <p className="font-cyber text-[11px] text-game-text mt-1 tracking-wider">
+                发现新 AI 裁判：「{DIFFICULTY_CONFIG[currentLevel + 1]?.name || '???'}」
+              </p>
+              <p className="font-data text-[10px] text-game-text-dim mt-0.5">
+                下一关已解锁，难度系数 ×{DIFFICULTY_CONFIG[currentLevel + 1]?.baselineCoefficient || '?'}
+              </p>
+            </div>
+          )}
           {passed && !isEndless && currentLevel >= 5 && (
             <p className="font-cyber text-xs text-success mt-1 tracking-wider">
               ALL STAGES CLEARED // MASTER ACHIEVED
@@ -94,7 +134,7 @@ export function ResultModal({ onBackToMenu }: ResultModalProps) {
             <span className={`font-data text-lg font-bold ${
               passed ? 'text-success' : 'text-danger'
             }`}>
-              {totalValue}<span className="text-sm text-game-text-dim">/100</span>
+              {totalValue}<span className="text-sm text-game-text-dim">/30</span>
             </span>
           </div>
           <div className="flex items-center justify-between py-2 border-b border-game-border/30">

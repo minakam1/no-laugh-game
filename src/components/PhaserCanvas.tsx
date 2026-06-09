@@ -2,12 +2,13 @@
 // PhaserCanvas — Phaser 挂载容器（赛博朋克直播舞台风格 + 固定比例）
 // ============================================================
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import Phaser from 'phaser';
 import { BootScene } from '@/phaser/scenes/BootScene';
 import { EditorScene } from '@/phaser/scenes/EditorScene';
 import { eventBus } from '@/phaser/bridges/PhaserEventBus';
 import type { PerformRequestedData } from '@/phaser/bridges/PhaserEventBus';
+import type { PropKey } from '@/phaser/assets/manifest';
 
 interface PhaserCanvasProps {
   onPerform: (data: PerformRequestedData) => Promise<void>;
@@ -110,18 +111,51 @@ export function PhaserCanvas({ onPerform, disabled }: PhaserCanvasProps) {
     };
   }, []); // 空依赖：Phaser Game 只创建一次
 
+  /** 处理从 React 面板拖拽道具到画布 */
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    const propKey = e.dataTransfer.getData('text/plain') as PropKey;
+    if (!propKey) return;
+
+    const canvas = containerRef.current?.querySelector('canvas');
+    if (!canvas || !wrapperRef.current) return;
+
+    // 获取 canvas 在页面中的位置和尺寸
+    const canvasRect = canvas.getBoundingClientRect();
+    // 计算相对坐标（相对于 canvas 左上角）
+    const relX = e.clientX - canvasRect.left;
+    const relY = e.clientY - canvasRect.top;
+    // 转换为 Phaser 世界坐标（canvas 实际像素 → 世界坐标）
+    const scaleX = 1280 / canvasRect.width;
+    const scaleY = 960 / canvasRect.height;
+    const worldX = Math.round(relX * scaleX);
+    const worldY = Math.round(relY * scaleY);
+
+    eventBus.emit('request-place-prop', { key: propKey, x: worldX, y: worldY });
+  }, []);
+
   return (
-    <div ref={wrapperRef} className="w-full h-full relative flex items-center justify-center bg-game-bg overflow-hidden">
-      {/* Phaser 画布容器 - 固定 4:3 比例，限制最大尺寸 */}
+    <div
+      ref={wrapperRef}
+      className="w-full h-full relative flex items-center justify-center bg-game-bg overflow-hidden"
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
+      {/* Phaser 画布容器 - 4:3 比例，自适应填满窗口 */}
       <div
         ref={containerRef}
         className="phaser-container overflow-hidden crt-screen"
         style={{
           aspectRatio: '4/3',
-          maxWidth: '100%',
+          width: '100%',
+          height: '100%',
+          maxWidth: '100vw',
           maxHeight: '100%',
-          width: 'auto',
-          height: 'auto',
           position: 'relative',
         }}
       />

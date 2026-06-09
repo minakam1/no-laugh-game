@@ -24,7 +24,12 @@ export default function App() {
 
   // 启动：检查已有配置和存档
   useEffect(() => {
-    const savedKey = localStorage.getItem('apiKey') || '';
+    const legacyKey = localStorage.getItem('apiKey') || '';
+    if (legacyKey) {
+      sessionStorage.setItem('apiKey', legacyKey);
+      localStorage.removeItem('apiKey');
+    }
+    const savedKey = sessionStorage.getItem('apiKey') || legacyKey;
     const savedUrl = localStorage.getItem('apiBaseUrl') || '';
     const savedModel = localStorage.getItem('apiModel') || '';
 
@@ -44,7 +49,7 @@ export default function App() {
   // 自动存档：每当 phase 变为 'result' 时触发
   useEffect(() => {
     if (phase === 'result') {
-      saveToStorage();
+      void saveToStorage();
     }
   }, [phase]);
 

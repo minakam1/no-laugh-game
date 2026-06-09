@@ -2,10 +2,11 @@
 // PhaserEventBus — React ↔ Phaser 通信总线（README 12.4 节）
 // ============================================================
 
-import type { PlacedProp, SceneSnapshot } from '@/types';
+import type { ObservationPacket, PlacedProp, SceneSnapshot } from '@/types';
 
 export interface PerformRequestedData {
   snapshot: SceneSnapshot;
+  observation: ObservationPacket;
   beforeScreenshot: string;
   afterScreenshot: string;
   effectDescriptions: string[];
@@ -14,6 +15,9 @@ export interface PerformRequestedData {
 export type EventBusEvent =
   | { type: 'prop-placed'; prop: PlacedProp }
   | { type: 'prop-removed'; propId: string }
+  | { type: 'scene-cleared' }
+  | { type: 'request-clear-scene' }
+  | { type: 'request-place-prop'; key: string; x: number; y: number }
   | { type: 'perform-requested'; data: PerformRequestedData }
   | { type: 'scene-ready' }
   | { type: 'scene-error'; error: Error };

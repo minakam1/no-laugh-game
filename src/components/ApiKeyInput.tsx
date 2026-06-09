@@ -123,7 +123,10 @@ export function ApiKeyInput({ onConfirm, savedConfig }: ApiKeyInputProps) {
       model: model.trim(),
     };
 
-    localStorage.setItem('apiKey', config.apiKey);
+    if (config.apiKey) sessionStorage.setItem('apiKey', config.apiKey);
+    else sessionStorage.removeItem('apiKey');
+    localStorage.removeItem('apiKey');
+    localStorage.setItem('apiKeyHint', config.apiKey ? config.apiKey.slice(-4) : '');
     localStorage.setItem('apiBaseUrl', config.baseUrl);
     localStorage.setItem('apiModel', config.model);
     onConfirm(config);
@@ -228,7 +231,7 @@ export function ApiKeyInput({ onConfirm, savedConfig }: ApiKeyInputProps) {
               </button>
             </div>
             <p className="mt-1.5 text-xs text-game-text-dim/60 font-data">
-              [SECURE] Key 仅存本地浏览器，不会上传至服务器
+              [SECURE] Key 仅保存在当前标签页；生产模式可由云函数环境变量托管
             </p>
           </div>
 

@@ -13,10 +13,10 @@ export default defineConfig({
     port: 3000,
     open: true,
     proxy: {
-      '/api': {
+      '/api/chat/completions': {
         target: 'http://127.0.0.1:1234',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '/v1'),
+        rewrite: () => '/v1/chat/completions',
       },
     },
   },

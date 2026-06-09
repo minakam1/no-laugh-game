@@ -3,6 +3,7 @@
 // ============================================================
 
 import { create } from 'zustand';
+import { eventBus } from '@/phaser/bridges/PhaserEventBus';
 import type {
   GameState,
   RoundResult,
@@ -43,6 +44,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   bestScores: {},
   endlessHighScore: 0,
   endlessBestLevel: 1,
+  judgeDismissedRound: 0,
 
   startRound: () => {
     set({ phase: 'editing' });
@@ -65,6 +67,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       decayFactor,
       reaction: result.reaction,
       reason: result.reason,
+      motionSummary: result.motionSummary,
     };
 
     const newRounds = [...meter.rounds, roundRecord];
@@ -161,6 +164,33 @@ export const useGameStore = create<GameState>((set, get) => ({
     set(updates);
   },
 
+  /** 用户点击"继续"关闭裁判卡片，回到等待表演信号输入状态 */
+  dismissJudgeCard: () => {
+    const state = get();
+    set({ judgeDismissedRound: state.meter.rounds.length });
+  },
+
+  /** 分数达标后用户手动点击"立即执行"触发结算 */
+  forceSettle: () => {
+    const state = get();
+    const newValue = state.meter.value;
+    const passed = newValue >= PASS_THRESHOLD;
+
+    set({
+      phase: 'result',
+      unlockedLevels: passed
+        ? Math.max(state.unlockedLevels, state.currentLevel + 1)
+        : state.unlockedLevels,
+      bestScores: {
+        ...state.bestScores,
+        [state.currentLevel]: Math.max(
+          state.bestScores[state.currentLevel] || 0,
+          Math.round(newValue),
+        ),
+      },
+    });
+  },
+
   nextLevel: () => {
     set((s) => ({
       currentLevel:
@@ -170,6 +200,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       currentRound: 1,
       meter: { value: 0, rounds: [], decayMap: {} },
       phase: 'editing',
+      judgeDismissedRound: 0,
     }));
   },
 
@@ -178,7 +209,13 @@ export const useGameStore = create<GameState>((set, get) => ({
       meter: { value: 0, rounds: [], decayMap: {} },
       currentRound: 1,
       phase: 'editing',
+      judgeDismissedRound: 0,
     });
+  },
+
+  /** 仅清空画布道具，保留分数和回合状态（编辑阶段"重置舞台"按钮用） */
+  clearCanvas: () => {
+    eventBus.emit('request-clear-scene');
   },
 
   setMode: (mode, level) => {
@@ -190,6 +227,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       maxRounds: mode === 'story' ? 10 : Infinity,
       meter: { value: 0, rounds: [], decayMap: {} },
       phase: 'editing',
+      judgeDismissedRound: 0,
     });
   },
 
@@ -218,7 +256,7 @@ export function serializeSave(): SaveData {
       bestLevel: state.endlessBestLevel,
     },
     settings: {
-      apiKeyHint: sessionStorage.getItem('apiKey')?.slice(-4) || '',
+      apiKeyHint: sessionStorage.getItem('apiKey')?.slice(-4) || localStorage.getItem('apiKeyHint') || '',
     },
     savedAt: Date.now(),
   };
@@ -260,16 +298,19 @@ function readIndexedDB(): Promise<SaveData | null> {
   });
 }
 
-export function saveToStorage(): boolean {
+export async function saveToStorage(): Promise<boolean> {
   const data = serializeSave();
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(data));
     return true;
   } catch {
     console.warn('localStorage full, falling back to IndexedDB');
-    return writeIndexedDB(data)
-      .then(() => true)
-      .catch(() => false) as unknown as boolean;
+    try {
+      await writeIndexedDB(data);
+      return true;
+    } catch {
+      return false;
+    }
   }
 }
 

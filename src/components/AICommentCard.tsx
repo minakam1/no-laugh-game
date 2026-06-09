@@ -8,9 +8,11 @@ import { DIFFICULTY_CONFIG } from '@/store/gameStore';
 export function AICommentCard() {
   const rounds = useGameStore((s) => s.meter.rounds);
   const currentLevel = useGameStore((s) => s.currentLevel);
+  const judgeDismissedRound = useGameStore((s) => s.judgeDismissedRound);
   const lastRound = rounds[rounds.length - 1];
 
-  if (!lastRound) {
+  // 如果用户已关闭裁判卡片（judgeDismissedRound >= rounds.length），显示等待状态
+  if (!lastRound || judgeDismissedRound >= rounds.length) {
     return (
       <div className="px-4 py-3 border-t border-game-border bg-game-surface/30">
         <div className="flex items-center gap-3">
@@ -77,6 +79,27 @@ export function AICommentCard() {
           <span className="font-data text-xs text-game-text">#{rounds.length}</span>
         </div>
       </div>
+
+      {lastRound.motionSummary && (
+        <div className="mt-2 pt-2 border-t border-game-border/30">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-cyber text-[9px] text-accent tracking-wider">
+              MOTION CHAIN
+            </span>
+            {lastRound.motionSummary.chainLabels.length > 0 && (
+              <span className="font-data text-[11px] text-game-text">
+                {lastRound.motionSummary.chainLabels.join(' -> ')}
+              </span>
+            )}
+            <span className="font-data text-[10px] text-game-text-dim">
+              moved {lastRound.motionSummary.movedCount} / effects {lastRound.motionSummary.effectCount}
+            </span>
+          </div>
+          <p className="mt-1 font-data text-[11px] text-game-text-dim leading-relaxed">
+            {lastRound.motionSummary.text}
+          </p>
+        </div>
+      )}
     </div>
   );
 }

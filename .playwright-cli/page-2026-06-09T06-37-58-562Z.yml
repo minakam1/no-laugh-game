@@ -1,0 +1,80 @@
+- generic [ref=e4]:
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e7]: ◈
+      - generic [ref=e8]: NEURO-LINK
+    - generic [ref=e10]: "MODEL: NL-9000"
+  - generic [ref=e15]:
+    - generic [ref=e16]:
+      - generic [ref=e18]: LIVE
+      - generic [ref=e21]: 13,868 VIEWERS
+      - heading "不许笑" [level=1] [ref=e22]
+      - paragraph [ref=e23]: // 玩家搭场景 · AI 当观众 · 绷不住了算我输
+      - generic [ref=e24]:
+        - generic [ref=e26]: SIGNAL
+        - generic [ref=e33]:
+          - generic [ref=e34]: LATENCY
+          - generic [ref=e35]: 12ms
+        - generic [ref=e37]:
+          - generic [ref=e38]: QUALITY
+          - generic [ref=e39]: 4K
+      - button "⚙ SIGNAL CONFIG" [ref=e40] [cursor=pointer]
+    - generic [ref=e41]:
+      - generic [ref=e45]:
+        - heading "STORY MODE" [level=2] [ref=e46]
+        - paragraph [ref=e47]: // 5 关递进挑战，从"快乐小狗"到"冷面裁判官"
+      - generic [ref=e48]:
+        - button "STAGE 01 快乐小狗 TARGET ≥5" [ref=e49] [cursor=pointer]:
+          - generic [ref=e50]:
+            - generic [ref=e51]: STAGE 01
+            - generic [ref=e52]: 快乐小狗
+          - generic [ref=e53]: TARGET ≥5
+        - button "STAGE 02 好奇大学生 LOCKED" [disabled] [ref=e54]:
+          - generic [ref=e55]:
+            - generic [ref=e56]: STAGE 02
+            - generic [ref=e57]: 好奇大学生
+          - generic [ref=e58]: LOCKED
+        - button "STAGE 03 淡定上班族 LOCKED" [disabled] [ref=e59]:
+          - generic [ref=e60]:
+            - generic [ref=e61]: STAGE 03
+            - generic [ref=e62]: 淡定上班族
+          - generic [ref=e63]: LOCKED
+        - button "STAGE 04 文艺鉴赏家 LOCKED" [disabled] [ref=e64]:
+          - generic [ref=e65]:
+            - generic [ref=e66]: STAGE 04
+            - generic [ref=e67]: 文艺鉴赏家
+          - generic [ref=e68]: LOCKED
+        - button "STAGE 05 冷面裁判官 LOCKED" [disabled] [ref=e69]:
+          - generic [ref=e70]:
+            - generic [ref=e71]: STAGE 05
+            - generic [ref=e72]: 冷面裁判官
+          - generic [ref=e73]: LOCKED
+      - button "◈ START FROM STAGE 01" [ref=e74] [cursor=pointer]
+    - generic [ref=e75]:
+      - generic [ref=e79]:
+        - heading "ENDLESS MODE" [level=2] [ref=e80]
+        - paragraph [ref=e81]: // 自选难度，无限回合，冲击最高分
+      - generic [ref=e82]:
+        - button "LV1 快乐小狗" [ref=e83] [cursor=pointer]:
+          - text: LV1
+          - generic [ref=e84]: 快乐小狗
+        - button "LV2 好奇大学生" [ref=e85] [cursor=pointer]:
+          - text: LV2
+          - generic [ref=e86]: 好奇大学生
+        - button "LV3 淡定上班族" [ref=e87] [cursor=pointer]:
+          - text: LV3
+          - generic [ref=e88]: 淡定上班族
+        - button "LV4 文艺鉴赏家" [ref=e89] [cursor=pointer]:
+          - text: LV4
+          - generic [ref=e90]: 文艺鉴赏家
+        - button "LV5 冷面裁判官" [ref=e91] [cursor=pointer]:
+          - text: LV5
+          - generic [ref=e92]: 冷面裁判官
+    - generic [ref=e93]:
+      - generic [ref=e94]: "CHANNEL: #BU_XU_XIAO // NEO_BRUTAL_SIGNAL v2.0"
+      - generic [ref=e97]: SERVER ONLINE
+  - generic [ref=e98]:
+    - generic [ref=e99]:
+      - generic [ref=e102]: POWER
+      - generic [ref=e105]: SIGNAL
+    - generic [ref=e111]: "S/N: 8X-7729-β"

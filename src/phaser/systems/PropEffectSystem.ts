@@ -9,6 +9,12 @@ import type { PlacedProp } from '@/types';
 import { PROP_MANIFEST } from '../assets/manifest';
 import type { PropKey } from '../assets/manifest';
 
+const DEBUG_PROP_EFFECTS = import.meta.env.DEV;
+
+function debugLog(...args: unknown[]): void {
+  if (DEBUG_PROP_EFFECTS) console.log(...args);
+}
+
 export interface EffectContext {
   scene: Phaser.Scene;
   /** 所有已放置道具的 Image 引用 (key: prop.id) */
@@ -564,12 +570,12 @@ export function executeAllEffects(
   const ticks: ((elapsed: number) => void)[] = [];
   const cleanups: (() => void)[] = [];
 
-  console.log(`[PropEffect] 初始化: ${placedProps.length} 个道具, duration=${duration}ms`);
+  debugLog(`[PropEffect] 初始化: ${placedProps.length} 个道具, duration=${duration}ms`);
 
   for (const prop of placedProps) {
     const effectFn = EFFECT_REGISTRY[prop.type];
     if (!effectFn) {
-      console.log(`[PropEffect]   道具 ${prop.id} (${prop.type}): 无注册效果，跳过`);
+      debugLog(`[PropEffect]   道具 ${prop.id} (${prop.type}): 无注册效果，跳过`);
       continue;
     }
 
@@ -578,13 +584,13 @@ export function executeAllEffects(
       descriptions.push(`[${PROP_MANIFEST[prop.type].label}] ${result.description}`);
       ticks.push(result.tick);
       cleanups.push(result.cleanup);
-      console.log(`[PropEffect]   道具 ${prop.id} (${prop.type}): 效果已注册`);
+      debugLog(`[PropEffect]   道具 ${prop.id} (${prop.type}): 效果已注册`);
     } else {
-      console.log(`[PropEffect]   道具 ${prop.id} (${prop.type}): imageMap中未找到，跳过`);
+      debugLog(`[PropEffect]   道具 ${prop.id} (${prop.type}): imageMap中未找到，跳过`);
     }
   }
 
-  console.log(`[PropEffect] 总计: ${ticks.length} 个tick, ${cleanups.length} 个cleanup`);
+  debugLog(`[PropEffect] 总计: ${ticks.length} 个tick, ${cleanups.length} 个cleanup`);
 
   // 统一主循环：单一 16ms 定时器驱动所有效果
   if (ticks.length > 0) {
@@ -606,11 +612,11 @@ export function executeAllEffects(
       },
     });
 
-    console.log(`[PropEffect] 主循环已启动 (delay=16ms), 将在 ${duration}ms 后清理`);
+    debugLog(`[PropEffect] 主循环已启动 (delay=16ms), 将在 ${duration}ms 后清理`);
 
     // duration 毫秒后清理所有效果
     ctx.scene.time.delayedCall(duration, () => {
-      console.log(`[PropEffect] 清理开始: 共 ${frameCount} 帧, 耗时 ${ctx.scene.time.now - startTime}ms`);
+      debugLog(`[PropEffect] 清理开始: 共 ${frameCount} 帧, 耗时 ${ctx.scene.time.now - startTime}ms`);
       timer.destroy();
       for (let i = 0; i < cleanups.length; i++) {
         try {
@@ -619,10 +625,10 @@ export function executeAllEffects(
           console.error(`[PropEffect] cleanup[${i}] 异常:`, e);
         }
       }
-      console.log(`[PropEffect] 清理完成`);
+      debugLog(`[PropEffect] 清理完成`);
     });
   } else {
-    console.log(`[PropEffect] 无效果需要执行，跳过`);
+    debugLog(`[PropEffect] 无效果需要执行，跳过`);
   }
 
   return descriptions;

@@ -9,6 +9,7 @@ import { useGameStore, DIFFICULTY_CONFIG } from '@/store/gameStore';
 import { usePerform } from '@/hooks/usePerform';
 import { useResponsive } from '@/hooks/useResponsive';
 import { PhaserCanvas } from './PhaserCanvas';
+import { PropPanel } from './PropPanel';
 import { BreakdownBar } from './BreakdownBar';
 import { DanmakuStream, type DanmakuItem } from './DanmakuStream';
 import { AICommentCard } from './AICommentCard';
@@ -59,7 +60,10 @@ export function LiveStage({ apiConfig, onBackToMenu, onBackToConfig }: LiveStage
   const maxRounds = useGameStore((s) => s.maxRounds);
   const mode = useGameStore((s) => s.mode);
   const rounds = useGameStore((s) => s.meter.rounds);
-  const reset = useGameStore((s) => s.reset);
+  const judgeDismissedRound = useGameStore((s) => s.judgeDismissedRound);
+  const dismissJudgeCard = useGameStore((s) => s.dismissJudgeCard);
+  const forceSettle = useGameStore((s) => s.forceSettle);
+  const difficultyName = DIFFICULTY_CONFIG[currentLevel]?.name || 'UNKNOWN';
 
   // usePerform hook
   const { reaction, isLoading, error, handlePerform, dismissError } = usePerform(apiConfig);
@@ -78,15 +82,15 @@ export function LiveStage({ apiConfig, onBackToMenu, onBackToConfig }: LiveStage
       setTimeout(() => {
         const text = generator();
         presetIdRef.current += 1;
-        setPresetDanmaku((prev) => {
-          const next = [...prev, {
+        setPresetDanmaku((prev) => [
+          ...prev,
+          {
             text,
             score: 0,
             round: presetIdRef.current,
             isPreset: true,
-          }];
-          return next.slice(-80);
-        });
+          },
+        ]);
       }, delay);
     }
   }, []);
@@ -124,8 +128,8 @@ export function LiveStage({ apiConfig, onBackToMenu, onBackToConfig }: LiveStage
       };
       scheduleNext();
     } else {
-      // 其他阶段清空
-      setPresetDanmaku([]);
+      // 其他阶段（judging/result）：暂停预设弹幕但不删除已有内容
+      // 不清理 presetDanmaku，保持聊天记录完整
     }
 
     return () => {
@@ -135,60 +139,91 @@ export function LiveStage({ apiConfig, onBackToMenu, onBackToConfig }: LiveStage
     };
   }, [phase, currentRound, fireDanmakuBurst]);
 
-  // 合并AI弹幕和预设弹幕（预设弹幕插在中间营造氛围）
-  // Super Chat 逻辑：AI 弹幕始终保留，不被截断刷掉
-  const danmakuList = useMemo<DanmakuItem[]>(() => {
-    const aiList: DanmakuItem[] = rounds.slice(-100).map((r, i) => ({
-      text: r.reaction,
-      score: r.funnyScore,
-      round: rounds.length - 100 + i + 1,
-    }));
+  // ============================================================
+  // 弹幕列表合并逻辑：
+  // - AI 弹幕（Super Chat）永远保留
+  // - 预设弹幕永远保留，穿插在 AI 弹幕之间
+  // - 两者都不设上限，用户可滚动回看全部历史
+  // ============================================================
 
-    if (presetDanmaku.length === 0) return aiList;
+  // 持久化所有弹幕（不截断、不清空）
+  const allDanmakuRef = useRef<DanmakuItem[]>([]);
 
-    // 将预设弹幕均匀穿插在AI弹幕之间
-    const mixed: DanmakuItem[] = [];
-    let presetIdx = 0;
-
-    aiList.forEach((item, idx) => {
-      mixed.push(item);
-      // 每间隔几条AI弹幕插入一条预设弹幕
-      if ((idx + 1) % 3 === 0 && presetIdx < presetDanmaku.length) {
-        mixed.push(presetDanmaku[presetIdx]);
-        presetIdx++;
+  // 同步 AI 弹幕：增量追加新回合，不删除旧数据
+  const prevRoundsLenRef = useRef(0);
+  useEffect(() => {
+    if (rounds.length > prevRoundsLenRef.current) {
+      // 有新回合，追加新的 AI 弹幕
+      const newItems: DanmakuItem[] = [];
+      for (let i = prevRoundsLenRef.current; i < rounds.length; i++) {
+        newItems.push({
+          text: rounds[i].reaction,
+          score: rounds[i].funnyScore,
+          round: i + 1,
+        });
       }
-    });
-    // 剩余的预设弹幕追加到末尾
-    while (presetIdx < presetDanmaku.length) {
-      mixed.push(presetDanmaku[presetIdx]);
-      presetIdx++;
+      allDanmakuRef.current = [...allDanmakuRef.current, ...newItems];
     }
+    prevRoundsLenRef.current = rounds.length;
+  }, [rounds]);
 
-    // Super Chat 保护：截断时优先保留 AI 弹幕（非 preset），只裁剪预设弹幕
-    const MAX_TOTAL = 100;
-    if (mixed.length <= MAX_TOTAL) return mixed;
+  // 同步预设弹幕：增量追加，不删除旧数据
+  const prevPresetLenRef = useRef(0);
+  useEffect(() => {
+    if (presetDanmaku.length > prevPresetLenRef.current) {
+      const newItems = presetDanmaku.slice(prevPresetLenRef.current);
+      allDanmakuRef.current = [...allDanmakuRef.current, ...newItems];
+    }
+    prevPresetLenRef.current = presetDanmaku.length;
+  }, [presetDanmaku]);
 
-    // 分离 AI 弹幕和预设弹幕
-    const aiItems = mixed.filter((item) => !item.isPreset);
-    const presetItems = mixed.filter((item) => item.isPreset);
-
-    // AI 弹幕最多保留 80 条（给预设弹幕留空间），预设弹幕填充剩余
-    const maxAi = Math.min(aiItems.length, 80);
-    const keptAi = aiItems.slice(-maxAi);
-    const maxPreset = MAX_TOTAL - keptAi.length;
-    const keptPreset = presetItems.slice(-maxPreset);
-
-    // 按原始顺序重新合并
-    const keptSet = new Set([...keptAi, ...keptPreset]);
-    return mixed.filter((item) => keptSet.has(item));
+  // 渲染列表：直接使用持久化的 ref
+  // 当 ref 变化时触发渲染（用简单的计数器）
+  const [listVersion, setListVersion] = useState(0);
+  useEffect(() => {
+    setListVersion((v) => v + 1);
   }, [rounds, presetDanmaku]);
+
+  const danmakuList = useMemo<DanmakuItem[]>(() => {
+    // 每次 rounds 或 presetDanmaku 变化时重新读取 ref
+    return allDanmakuRef.current;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [listVersion]);
+
+  /** 双击移除弹幕 */
+  const handleRemoveDanmaku = useCallback((index: number) => {
+    allDanmakuRef.current = allDanmakuRef.current.filter((_, i) => i !== index);
+    setListVersion((v) => v + 1);
+  }, []);
 
   const isMobile = bp === 'mobile';
 
-  // 模拟在线人数（用 ref 避免 useMemo 中随机数导致无效计算）
-  const [viewerCount] = useState(() =>
-    Math.floor(8000 + Math.sin(Date.now() / 10000) * 2000 + Math.random() * 500)
+  // 模拟在线人数（与绷不住值正相关 + 大幅随机波动，允许减少）
+  // meterValue 0→base 8000, meterValue 100→base 35000
+  const baseViewers = 8000 + meterValue * 270;
+  const [viewerCount, setViewerCount] = useState(() =>
+    Math.floor(baseViewers + (Math.random() - 0.5) * 400)
   );
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const target = baseViewers;
+      setViewerCount((prev) => {
+        const drift = (target - prev) * 0.25;
+        // 大幅随机：可能暴增也可能暴跌
+        const roll = Math.random();
+        let jitter: number;
+        if (roll > 0.92) {
+          jitter = -Math.floor(Math.random() * 2000); // 8% 概率暴跌 0~2000
+        } else if (roll > 0.85) {
+          jitter = Math.floor(Math.random() * 2500);   // 7% 概率暴涨 0~2500
+        } else {
+          jitter = Math.floor((Math.random() - 0.5) * 800); // 正常波动 ±400
+        }
+        return Math.max(100, Math.min(99999, Math.round(prev + drift + jitter)));
+      });
+    }, 2000 + Math.random() * 3000);
+    return () => clearInterval(interval);
+  }, [baseViewers]);
 
   return (
     <div className="h-full flex flex-col bg-game-bg relative">
@@ -220,6 +255,7 @@ export function LiveStage({ apiConfig, onBackToMenu, onBackToConfig }: LiveStage
               round={currentRound}
               maxRounds={maxRounds}
               mode={mode}
+              onForceSettle={forceSettle}
             />
           </div>
 
@@ -254,8 +290,11 @@ export function LiveStage({ apiConfig, onBackToMenu, onBackToConfig }: LiveStage
           isMobile ? 'flex-col' : 'flex-row'
         }`}
       >
+        {/* 道具面板（左侧，画布外） */}
+        {!isMobile && <PropPanel />}
+
         {/* Phaser 画布（舞台区域） */}
-        <div className={isMobile ? 'flex-[0_0_55%]' : 'flex-[0_0_60%]'}>
+        <div className={isMobile ? 'flex-[0_0_55%]' : 'flex-1'}>
           <div className="h-full flex flex-col p-2">
             {/* 舞台标题 */}
             <div className="flex items-center justify-between mb-1 px-1">
@@ -266,7 +305,7 @@ export function LiveStage({ apiConfig, onBackToMenu, onBackToConfig }: LiveStage
                 </span>
               </div>
               <span className="font-data text-[10px] text-game-text-dim">
-                LV{currentLevel} // {useGameStore((s) => DIFFICULTY_CONFIG[s.currentLevel]?.name || 'UNKNOWN')}
+                LV{currentLevel} // {difficultyName}
               </span>
             </div>
             {/* Phaser 画布容器 */}
@@ -281,10 +320,10 @@ export function LiveStage({ apiConfig, onBackToMenu, onBackToConfig }: LiveStage
           className={`border-game-border ${
             isMobile
               ? 'flex-1 border-t'
-              : 'flex-[0_0_40%] border-l'
+              : 'flex-[0_0_30%] border-l'
           }`}
         >
-          <DanmakuStream list={danmakuList} />
+          <DanmakuStream list={danmakuList} onRemove={handleRemoveDanmaku} />
         </div>
       </div>
 
@@ -306,15 +345,15 @@ export function LiveStage({ apiConfig, onBackToMenu, onBackToConfig }: LiveStage
         </div>
       )}
 
-      {/* 重置按钮（仅在编辑阶段显示） */}
-      {phase === 'editing' && rounds.length > 0 && (
-        <div className="px-4 pb-3 flex justify-center relative z-10">
+      {/* 裁判打分提示条（judging 后显示，点击关闭） */}
+      {phase === 'editing' && rounds.length > 0 && judgeDismissedRound < rounds.length && (
+        <div className="px-4 pb-3 flex justify-center relative z-10 animate-fade-in">
           <button
-            onClick={reset}
-            className="px-4 py-1.5 border border-game-border text-[10px] font-cyber text-game-text-dim
-                       hover:border-danger hover:text-danger transition-all tracking-wider"
+            onClick={dismissJudgeCard}
+            className="px-4 py-1.5 border border-accent/50 bg-accent/10 text-accent font-cyber text-[10px]
+                       hover:bg-accent/20 transition-all tracking-wider"
           >
-            ◈ RESET STAGE
+            ◈ 裁判已打分 — 点击继续下一回合
           </button>
         </div>
       )}
