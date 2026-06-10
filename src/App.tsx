@@ -32,10 +32,16 @@ export default function App() {
     const savedKey = sessionStorage.getItem('apiKey') || legacyKey;
     const savedUrl = localStorage.getItem('apiBaseUrl') || '';
     const savedModel = localStorage.getItem('apiModel') || '';
+    const savedSupportsImages = localStorage.getItem('apiSupportsImages') === 'true';
 
     if (savedUrl && savedModel) {
       // 只要有 URL 和 Model 就可以恢复（Key 可选）
-      setApiConfig({ apiKey: savedKey, baseUrl: savedUrl, model: savedModel });
+      setApiConfig({
+        apiKey: savedKey,
+        baseUrl: savedUrl,
+        model: savedModel,
+        supportsImages: savedSupportsImages,
+      });
     }
 
     loadFromStorageAsync().then((saved) => {

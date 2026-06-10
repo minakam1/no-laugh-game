@@ -203,6 +203,7 @@ export interface PerformRequest {
   apiKey?: string;
   baseUrl?: string;
   model?: string;
+  supportsImages?: boolean;
   beforeScreenshot?: string;
   afterScreenshot?: string;
 }

@@ -123,8 +123,10 @@ ${JSON.stringify(data.observation, null, 2)}
 - 只输出真实直播观众会发的一条弹幕。`;
 }
 
-function createUserContent(data: PerformRequestedData) {
+function createUserContent(data: PerformRequestedData, includeImages: boolean) {
   const text = createObservationText(data);
+  if (!includeImages) return text;
+
   const content: Array<{ type: string; text?: string; image_url?: { url: string } }> = [
     { type: 'text', text },
   ];
@@ -246,6 +248,7 @@ async function callPerformProxy(params: {
       apiKey: params.apiConfig.apiKey || undefined,
       baseUrl: params.apiConfig.baseUrl,
       model: params.apiConfig.model,
+      supportsImages: params.apiConfig.supportsImages,
       beforeScreenshot: params.data.beforeScreenshot,
       afterScreenshot: params.data.afterScreenshot,
     }),
@@ -336,7 +339,7 @@ export function usePerform(apiConfig: ApiConfig): UsePerformReturn {
 
       try {
         const audienceSystem = createAudiencePrompt(currentLevel);
-        const userContent = createUserContent(performData);
+        const userContent = createUserContent(performData, apiConfig.supportsImages);
         const messages: ChatMessage[] = [
           { role: 'system', content: audienceSystem },
           { role: 'user', content: userContent },

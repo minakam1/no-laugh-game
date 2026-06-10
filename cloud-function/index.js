@@ -148,11 +148,12 @@ async function callLLMStream(params) {
 
 async function getAudienceReaction(params, events) {
   const hasImages = Boolean(params.beforeScreenshot || params.afterScreenshot);
+  const includeImages = hasImages && params.supportsImages === true;
   const userWithImages = buildUserContent(
     params.observation,
     params.beforeScreenshot,
     params.afterScreenshot,
-    hasImages,
+    includeImages,
   );
 
   try {
@@ -175,7 +176,7 @@ async function getAudienceReaction(params, events) {
     }
     return fullText;
   } catch (imageError) {
-    if (!hasImages) throw imageError;
+    if (!includeImages) throw imageError;
     console.warn('Audience vision failed, falling back to text only:', imageError.message);
   }
 
@@ -197,6 +198,7 @@ exports.main = async (event) => {
     apiKey,
     baseUrl,
     model,
+    supportsImages,
     beforeScreenshot,
     afterScreenshot,
   } = body;
@@ -217,6 +219,7 @@ exports.main = async (event) => {
       apiKey,
       baseUrl,
       model,
+      supportsImages,
       observation,
       beforeScreenshot,
       afterScreenshot,

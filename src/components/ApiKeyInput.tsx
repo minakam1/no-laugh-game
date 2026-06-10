@@ -8,6 +8,7 @@ export interface ApiConfig {
   apiKey: string;
   baseUrl: string;
   model: string;
+  supportsImages: boolean;
 }
 
 interface ApiKeyInputProps {
@@ -22,10 +23,16 @@ const LOCAL_DEFAULTS = {
   model: 'google/gemma-3-4b',
 };
 
+const DEEPSEEK_DEFAULTS = {
+  baseUrl: 'https://api.deepseek.com',
+  model: 'deepseek-v4-flash',
+};
+
 export function ApiKeyInput({ onConfirm, savedConfig }: ApiKeyInputProps) {
   const [apiKey, setApiKey] = useState(savedConfig?.apiKey || '');
   const [baseUrl, setBaseUrl] = useState(savedConfig?.baseUrl || LOCAL_DEFAULTS.baseUrl);
   const [model, setModel] = useState(savedConfig?.model || LOCAL_DEFAULTS.model);
+  const [supportsImages, setSupportsImages] = useState(savedConfig?.supportsImages || false);
   const [showKey, setShowKey] = useState(false);
   const [testStatus, setTestStatus] = useState<TestStatus>('idle');
   const [testError, setTestError] = useState('');
@@ -121,6 +128,7 @@ export function ApiKeyInput({ onConfirm, savedConfig }: ApiKeyInputProps) {
       apiKey: apiKey.trim(),
       baseUrl: baseUrl.trim().replace(/\/$/, ''),
       model: model.trim(),
+      supportsImages,
     };
 
     if (config.apiKey) sessionStorage.setItem('apiKey', config.apiKey);
@@ -129,6 +137,7 @@ export function ApiKeyInput({ onConfirm, savedConfig }: ApiKeyInputProps) {
     localStorage.setItem('apiKeyHint', config.apiKey ? config.apiKey.slice(-4) : '');
     localStorage.setItem('apiBaseUrl', config.baseUrl);
     localStorage.setItem('apiModel', config.model);
+    localStorage.setItem('apiSupportsImages', String(config.supportsImages));
     onConfirm(config);
   };
 
@@ -170,6 +179,7 @@ export function ApiKeyInput({ onConfirm, savedConfig }: ApiKeyInputProps) {
                 setBaseUrl(LOCAL_DEFAULTS.baseUrl);
                 setModel(LOCAL_DEFAULTS.model);
                 setApiKey('');
+                setSupportsImages(false);
               }}
               className="flex-1 py-1.5 border border-accent/40 text-[10px] font-cyber text-accent
                          hover:bg-accent/10 transition-all tracking-wider"
@@ -179,9 +189,23 @@ export function ApiKeyInput({ onConfirm, savedConfig }: ApiKeyInputProps) {
             <button
               type="button"
               onClick={() => {
+                setBaseUrl(DEEPSEEK_DEFAULTS.baseUrl);
+                setModel(DEEPSEEK_DEFAULTS.model);
+                setApiKey('');
+                setSupportsImages(false);
+              }}
+              className="flex-1 py-1.5 border border-accent/40 text-[10px] font-cyber text-accent
+                         hover:bg-accent/10 transition-all tracking-wider"
+            >
+              ◈ DEEPSEEK
+            </button>
+            <button
+              type="button"
+              onClick={() => {
                 setBaseUrl('');
                 setModel('');
                 setApiKey('');
+                setSupportsImages(false);
               }}
               className="flex-1 py-1.5 border border-game-border text-[10px] font-cyber text-game-text-dim
                          hover:border-accent-secondary/40 hover:text-accent-secondary transition-all tracking-wider"
@@ -203,7 +227,7 @@ export function ApiKeyInput({ onConfirm, savedConfig }: ApiKeyInputProps) {
               className="cyber-input w-full rounded-none"
             />
             <p className="mt-1.5 text-xs text-game-text-dim/60 font-data">
-              [INFO] 需要包含 /v1 路径。支持 OpenAI 兼容接口
+              [INFO] 支持 OpenAI 兼容接口；DeepSeek 使用 https://api.deepseek.com
             </p>
           </div>
 
@@ -248,9 +272,25 @@ export function ApiKeyInput({ onConfirm, savedConfig }: ApiKeyInputProps) {
               className="cyber-input w-full rounded-none"
             />
             <p className="mt-1.5 text-xs text-game-text-dim/60 font-data">
-              [SUPPORTED] gpt-4o-mini / deepseek-chat / qwen-turbo / glm-4-flash / google/gemma-3-4b
+              [SUPPORTED] gpt-4o-mini / deepseek-v4-flash / deepseek-v4-pro / qwen-turbo / glm-4-flash / google/gemma-3-4b
             </p>
           </div>
+
+          {/* Image support */}
+          <label className="flex items-start gap-3 border border-game-border/70 px-4 py-3 cursor-pointer hover:border-accent/50 transition-colors">
+            <input
+              type="checkbox"
+              checked={supportsImages}
+              onChange={(e) => setSupportsImages(e.target.checked)}
+              className="mt-1 accent-cyan-400"
+            />
+            <span>
+              <span className="cyber-label block">&gt;&gt; SUPPORTS IMAGE INPUT</span>
+              <span className="mt-1 block text-xs text-game-text-dim/60 font-data">
+                [INFO] 勾选后会把表演前后截图作为 image_url 发送；DeepSeek 请保持关闭
+              </span>
+            </span>
+          </label>
 
           {/* 测试按钮 */}
           <div>
