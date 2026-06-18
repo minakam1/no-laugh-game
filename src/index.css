@@ -1,0 +1,1096 @@
+/* ============================================
+   本地字体（Orbitron & Rajdhani）
+   ============================================ */
+
+/* Noto Sans SC - 本地中文字体 */
+@font-face {
+  font-family: 'Noto Sans SC';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/NotoSansSC-400.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Noto Sans SC';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/NotoSansSC-500.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Noto Sans SC';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/NotoSansSC-700.ttf') format('truetype');
+}
+
+/* Orbitron */
+@font-face {
+  font-family: 'Orbitron';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/Orbitron-400.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Orbitron';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/Orbitron-500.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Orbitron';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/Orbitron-600.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Orbitron';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/Orbitron-700.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Orbitron';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('/fonts/Orbitron-800.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Orbitron';
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url('/fonts/Orbitron-900.ttf') format('truetype');
+}
+
+/* Rajdhani */
+@font-face {
+  font-family: 'Rajdhani';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url('/fonts/Rajdhani-300.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Rajdhani';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/Rajdhani-400.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Rajdhani';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/Rajdhani-500.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Rajdhani';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/Rajdhani-600.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Rajdhani';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/Rajdhani-700.ttf') format('truetype');
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================
+   不许笑 - 赛博朋克直播风 CSS 主题变量
+   ============================================ */
+:root {
+  /* === 背景与表面 === */
+  --game-bg: #070707;
+  --game-surface: #111111;
+  --game-surface-glass: #111111;
+  --game-border: #2b2b2b;
+  --game-border-bright: #e7ff2f;
+
+  /* === 文字 === */
+  --game-text: #f3f3ea;
+  --game-text-dim: #9a9a8c;
+  --game-text-bright: #ffffff;
+
+  /* === 霓虹强调色 === */
+  --accent: #e7ff2f;
+  --accent-glow: rgba(231, 255, 47, 0.55);
+  --accent-secondary: #ff2d95;
+  --accent-secondary-glow: rgba(255, 45, 149, 0.5);
+  --accent-tertiary: #00e5ff;
+  --accent-tertiary-glow: rgba(0, 229, 255, 0.5);
+  --neo-ink: #000000;
+  --neo-paper: #f5f5e8;
+
+  /* === 绷不住值能量条 === */
+  --meter-fill: linear-gradient(90deg, #00e5ff, #ff2d95, #e7ff2f);
+  --meter-bg: #000000;
+
+  /* === 弹幕 === */
+  --danmaku-bg: rgba(231, 255, 47, 0.08);
+
+  /* === 状态色 === */
+  --danger: #ff1744;
+  --danger-glow: rgba(255, 23, 68, 0.5);
+  --success: #00ff85;
+  --success-glow: rgba(0, 255, 133, 0.5);
+  --warning: #ffe600;
+
+  /* === 直播元素 === */
+  --live-badge: #ff2d95;
+  --live-badge-glow: rgba(255, 45, 149, 0.6);
+  --viewer-count: #00e5ff;
+
+  /* === 字体 === */
+  font-family: 'Rajdhani', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', -apple-system, sans-serif;
+  color: var(--game-text);
+  background-color: var(--game-bg);
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* === 全局重置 === */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background-color: var(--game-bg);
+  color: var(--game-text);
+}
+
+/* === 滚动条主题 === */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: var(--game-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border-radius: 2px;
+  opacity: 0.5;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-secondary);
+}
+
+/* === 选中文字颜色 === */
+::selection {
+  background: var(--accent-secondary);
+  color: var(--game-bg);
+}
+
+/* === 赛博朋克通用组件类 === */
+@layer components {
+  /* 霓虹边框面板 */
+  .cyber-panel {
+    background: var(--game-surface-glass);
+    border: 3px solid var(--accent);
+    border-radius: 2px;
+    box-shadow:
+      7px 7px 0 var(--neo-ink),
+      10px 10px 0 var(--accent-secondary);
+    position: relative;
+  }
+  .cyber-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 8px;
+    background: repeating-linear-gradient(
+      90deg,
+      var(--accent) 0,
+      var(--accent) 14px,
+      var(--neo-ink) 14px,
+      var(--neo-ink) 20px,
+      var(--accent-secondary) 20px,
+      var(--accent-secondary) 34px,
+      var(--neo-ink) 34px,
+      var(--neo-ink) 40px
+    );
+    opacity: 1;
+  }
+
+  /* 霓虹发光边框 */
+  .cyber-glow-border {
+    border: 3px solid var(--accent);
+    box-shadow:
+      5px 5px 0 var(--neo-ink),
+      8px 8px 0 var(--accent-tertiary);
+  }
+
+  /* 粉色发光边框 */
+  .cyber-glow-border-pink {
+    border: 3px solid var(--accent-secondary);
+    box-shadow:
+      5px 5px 0 var(--neo-ink),
+      8px 8px 0 var(--accent);
+  }
+
+  /* 直播角标 */
+  .live-badge {
+    background: var(--live-badge);
+    color: var(--neo-ink);
+    font-family: 'Orbitron', 'Noto Sans SC', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0;
+    padding: 2px 8px;
+    border: 2px solid var(--neo-ink);
+    border-radius: 0;
+    text-transform: uppercase;
+    box-shadow: 3px 3px 0 var(--neo-ink);
+    animation: livePulse 2s ease-in-out infinite;
+  }
+
+  /* 霓虹文字 */
+  .cyber-text-glow {
+    text-shadow:
+      2px 2px 0 var(--neo-ink),
+      4px 4px 0 var(--accent-secondary);
+  }
+  .cyber-text-glow-pink {
+    text-shadow:
+      2px 2px 0 var(--neo-ink),
+      4px 4px 0 var(--accent);
+  }
+
+  /* 科幻标题字体 */
+  .font-cyber {
+    font-family: 'Orbitron', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    letter-spacing: 0;
+  }
+
+  /* 数据字体 */
+  .font-data {
+    font-family: 'Rajdhani', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', monospace;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+
+  /* 扫描线覆盖层 */
+  .scanlines::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(231, 255, 47, 0.035) 2px,
+      rgba(231, 255, 47, 0.035) 4px
+    );
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* 全屏 HUD 纹理：叠在屏幕内容之上，低于反光和扫描线 */
+  .hud-texture {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+    overflow: hidden;
+  }
+  .hud-texture::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(circle at 20% 30%, rgba(231, 255, 47, 0.06) 0 1px, transparent 1px),
+      radial-gradient(circle at 70% 65%, rgba(0, 229, 255, 0.045) 0 1px, transparent 1px),
+      repeating-linear-gradient(135deg, transparent 0 16px, rgba(255, 45, 149, 0.025) 16px 17px),
+      linear-gradient(rgba(231, 255, 47, 0.018) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 229, 255, 0.015) 1px, transparent 1px);
+    background-size: 37px 37px, 53px 53px, 24px 24px, 72px 72px, 72px 72px;
+    opacity: 0.72;
+  }
+  .hud-texture::after {
+    content: '';
+    position: absolute;
+    inset: 8px;
+    opacity: 0.45;
+    background:
+      linear-gradient(var(--accent) 0 0) top left / 34px 1px no-repeat,
+      linear-gradient(var(--accent) 0 0) top left / 1px 34px no-repeat,
+      linear-gradient(var(--accent-tertiary) 0 0) top right / 34px 1px no-repeat,
+      linear-gradient(var(--accent-tertiary) 0 0) top right / 1px 34px no-repeat,
+      linear-gradient(var(--accent-secondary) 0 0) bottom left / 34px 1px no-repeat,
+      linear-gradient(var(--accent-secondary) 0 0) bottom left / 1px 34px no-repeat,
+      linear-gradient(var(--accent) 0 0) bottom right / 34px 1px no-repeat,
+      linear-gradient(var(--accent) 0 0) bottom right / 1px 34px no-repeat;
+  }
+
+  /* 面板内部低透明度底纹，作为独立装饰层使用 */
+  .panel-pattern {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .panel-pattern::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(circle, rgba(231, 255, 47, 0.08) 0 1px, transparent 1px),
+      repeating-linear-gradient(135deg, transparent 0 12px, rgba(255, 45, 149, 0.035) 12px 13px);
+    background-size: 18px 18px, 22px 22px;
+    opacity: 0.34;
+  }
+  .panel-pattern::after {
+    content: '';
+    position: absolute;
+    right: -28px;
+    bottom: -28px;
+    width: 120px;
+    height: 120px;
+    border: 1px solid rgba(0, 229, 255, 0.16);
+    transform: rotate(45deg);
+  }
+
+  /* 独立角线装饰层，避免占用已有 cyber-panel/cyber-corner 伪元素 */
+  .corner-brackets {
+    position: absolute;
+    inset: 8px;
+    pointer-events: none;
+  }
+  .corner-brackets::before,
+  .corner-brackets::after {
+    content: '';
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    opacity: 0.7;
+  }
+  .corner-brackets::before {
+    top: 0;
+    left: 0;
+    border-top: 2px solid var(--accent);
+    border-left: 2px solid var(--accent);
+  }
+  .corner-brackets::after {
+    right: 0;
+    bottom: 0;
+    border-right: 2px solid var(--accent-tertiary);
+    border-bottom: 2px solid var(--accent-tertiary);
+  }
+
+  /* 小型 HUD 图标/状态胶囊 */
+  .status-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-height: 18px;
+    padding: 2px 6px;
+    border: 1px solid currentColor;
+    background: rgba(0, 0, 0, 0.42);
+    font-family: 'Orbitron', 'Noto Sans SC', sans-serif;
+    font-size: 8px;
+    font-weight: 800;
+    color: var(--accent);
+    line-height: 1;
+    text-transform: uppercase;
+    box-shadow: 2px 2px 0 var(--neo-ink);
+  }
+  .status-icon::before {
+    content: '';
+    width: 5px;
+    height: 5px;
+    background: currentColor;
+    box-shadow: 0 0 8px currentColor;
+  }
+
+  /* 舞台区域：统一青色细线边框，去掉杂乱的四角标记 */
+  .stage-reticle {
+    position: relative;
+    border: 1px solid rgba(0, 229, 255, 0.12);
+  }
+
+  @media (max-width: 640px) {
+    .hud-texture::after,
+    .panel-pattern::after,
+    .corner-brackets {
+      display: none;
+    }
+
+    .hud-texture::before {
+      opacity: 0.42;
+    }
+
+    .panel-pattern::before {
+      opacity: 0.2;
+    }
+
+    .stage-reticle {
+      border: 1px solid rgba(0, 229, 255, 0.08);
+    }
+
+    .status-icon {
+      min-height: 16px;
+      padding: 2px 5px;
+      font-size: 7px;
+    }
+  }
+
+  /* CRT 屏幕曲率效果 */
+  .crt-screen {
+    position: relative;
+    overflow: hidden;
+  }
+  .crt-screen::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      ellipse at center,
+      transparent 60%,
+      rgba(0, 0, 0, 0.4) 100%
+    );
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  /* 霓虹按钮 */
+  .cyber-btn {
+    font-family: 'Orbitron', 'Noto Sans SC', sans-serif;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0;
+    text-transform: uppercase;
+    padding: 10px 24px;
+    border: 3px solid var(--neo-ink);
+    background: var(--accent);
+    color: var(--neo-ink);
+    position: relative;
+    overflow: visible;
+    box-shadow: 5px 5px 0 var(--neo-ink);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    cursor: pointer;
+  }
+  .cyber-btn::before {
+    display: none;
+  }
+  .cyber-btn:hover::before {
+    left: auto;
+  }
+  .cyber-btn:hover {
+    background: var(--accent-tertiary);
+    box-shadow: 2px 2px 0 var(--neo-ink);
+    color: var(--neo-ink);
+    transform: translate(3px, 3px);
+  }
+  .cyber-btn:active {
+    transform: translate(5px, 5px);
+    box-shadow: 0 0 0 var(--neo-ink);
+  }
+
+  /* 粉色霓虹按钮 */
+  .cyber-btn-pink {
+    background: var(--accent-secondary);
+    color: var(--neo-ink);
+  }
+  .cyber-btn-pink::before {
+    display: none;
+  }
+  .cyber-btn-pink:hover {
+    background: var(--accent);
+    color: var(--neo-ink);
+  }
+
+  /* 红色危险按钮（困难模式） */
+  .cyber-btn-danger {
+    background: var(--danger);
+    color: #fff;
+  }
+  .cyber-btn-danger::before {
+    display: none;
+  }
+  .cyber-btn-danger:hover {
+    background: #cc0050;
+    color: #fff;
+  }
+
+  /* 输入框 */
+  .cyber-input {
+    background: var(--neo-paper);
+    border: 3px solid var(--neo-ink);
+    color: var(--neo-ink);
+    font-family: 'Rajdhani', 'Noto Sans SC', monospace;
+    font-size: 14px;
+    padding: 12px 16px;
+    outline: none;
+    box-shadow: 4px 4px 0 var(--neo-ink);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  }
+  .cyber-input:focus {
+    border-color: var(--accent-tertiary);
+    box-shadow: 2px 2px 0 var(--neo-ink), 0 0 0 3px var(--accent);
+    transform: translate(2px, 2px);
+  }
+  .cyber-input::placeholder {
+    color: #4d4d43;
+  }
+
+  /* 标签 */
+  .cyber-label {
+    font-family: 'Orbitron', 'Noto Sans SC', sans-serif;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: inline-block;
+    background: var(--neo-ink);
+    padding: 2px 6px;
+    border: 2px solid var(--accent);
+  }
+
+  .neo-title {
+    display: inline-block;
+    color: var(--neo-ink);
+    background: var(--accent);
+    border: 4px solid var(--neo-ink);
+    box-shadow:
+      6px 6px 0 var(--accent-secondary),
+      10px 10px 0 var(--neo-ink);
+    padding: 0.08em 0.18em;
+    text-shadow: none;
+  }
+
+  /* 角装饰 */
+  .cyber-corner {
+    position: relative;
+  }
+  .cyber-corner::after {
+    content: '';
+    position: absolute;
+    bottom: -3px;
+    right: -3px;
+    width: 18px;
+    height: 18px;
+    border-right: 5px solid var(--accent-tertiary);
+    border-bottom: 5px solid var(--accent-tertiary);
+  }
+
+  .group:hover .hover-translate-default,
+  button:hover .hover-translate-default {
+    opacity: 0;
+  }
+
+  .group:hover .hover-translate-hover,
+  button:hover .hover-translate-hover {
+    opacity: 1;
+  }
+}
+
+/* === 动画 === */
+@keyframes livePulse {
+  0%, 100% { opacity: 1; box-shadow: 3px 3px 0 var(--neo-ink); }
+  50% { opacity: 0.85; box-shadow: 5px 5px 0 var(--neo-ink); }
+}
+
+@keyframes neonFlicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+@keyframes dataStream {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 0% 100%; }
+}
+
+@keyframes borderGlow {
+  0%, 100% { border-color: var(--accent); box-shadow: 0 0 4px var(--accent-glow); }
+  50% { border-color: var(--accent-secondary); box-shadow: 0 0 8px var(--accent-secondary-glow); }
+}
+
+@keyframes loadingBar {
+  0% { left: -40%; }
+  100% { left: 100%; }
+}
+
+/* Super Chat 入场动画：金色光从顶部滑入 */
+@keyframes superChatEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+    filter: brightness(1.5);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(0) scale(1.01);
+    filter: brightness(1.2);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: brightness(1);
+  }
+}
+
+/* Super Chat 金色光晕呼吸 */
+@keyframes superChatGlow {
+  0%, 100% {
+    box-shadow:
+      0 0 8px rgba(234, 179, 8, 0.15),
+      inset 0 0 8px rgba(234, 179, 8, 0.05);
+  }
+  50% {
+    box-shadow:
+      0 0 16px rgba(234, 179, 8, 0.25),
+      inset 0 0 16px rgba(234, 179, 8, 0.1);
+  }
+}
+
+.animate-super-chat-enter {
+  animation: superChatEnter 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-super-chat-glow {
+  animation: superChatGlow 3s ease-in-out infinite;
+}
+
+/* Boss 开场卡 — 紫色/品红光晕呼吸 */
+@keyframes bossGlow {
+  0%, 100% {
+    box-shadow:
+      0 0 10px rgba(244, 63, 94, 0.15),
+      0 0 20px rgba(168, 85, 247, 0.08),
+      inset 0 0 10px rgba(244, 63, 94, 0.05);
+  }
+  50% {
+    box-shadow:
+      0 0 20px rgba(244, 63, 94, 0.3),
+      0 0 40px rgba(168, 85, 247, 0.15),
+      inset 0 0 20px rgba(244, 63, 94, 0.1);
+  }
+}
+
+.animate-boss-glow {
+  animation: bossGlow 2.5s ease-in-out infinite;
+}
+
+/* 成就解锁闪光 */
+@keyframes achievementFlash {
+  0% { opacity: 0; box-shadow: 0 0 0 rgba(234, 179, 8, 0); }
+  30% { opacity: 1; box-shadow: 0 0 30px rgba(234, 179, 8, 0.4), 0 0 60px rgba(234, 179, 8, 0.2); }
+  100% { opacity: 0; box-shadow: 0 0 0 rgba(234, 179, 8, 0); }
+}
+
+.animate-achievement-flash {
+  animation: achievementFlash 3s ease-out forwards;
+}
+
+/* ============================================
+   CRT 显示器外边框样式
+   参考：主播女孩重度依赖 / 复古电脑显示器
+   ============================================ */
+
+@layer components {
+  /* 显示器外壳 */
+  .monitor-frame {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    padding: 6px;
+    background:
+      linear-gradient(135deg, rgba(231, 255, 47, 0.08) 25%, transparent 25%) 0 0 / 18px 18px,
+      var(--game-bg);
+  }
+
+  /* 显示器边框（bezel） */
+  .monitor-bezel {
+    width: 100%;
+    max-width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: var(--game-bg);
+    border: 2px solid var(--neo-ink);
+    border-radius: 0;
+    box-shadow: none;
+    padding: 4px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* 屏幕区域 */
+  .monitor-screen-area {
+    flex: 1;
+    min-height: 0;
+    background: var(--neo-ink);
+    border: none;
+    border-radius: 0;
+    padding: 0;
+  }
+
+  /* CRT 显像管边缘 */
+  .monitor-crt-edge {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    overflow: hidden;
+    position: relative;
+    background: #000;
+    box-shadow:
+      inset 0 0 20px rgba(0, 0, 0, 0.9),
+      inset 0 0 40px rgba(0, 0, 0, 0.5);
+  }
+
+  /* 屏幕内容 */
+  .monitor-screen-content {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* 屏幕反光 */
+  .monitor-glare {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(231, 255, 47, 0.025) 0%, transparent 35%);
+    pointer-events: none;
+    z-index: 10;
+    border-radius: 0;
+  }
+
+  /* 扫描线 */
+  .monitor-scanlines {
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(231, 255, 47, 0.02) 2px,
+      rgba(231, 255, 47, 0.02) 4px
+    );
+    pointer-events: none;
+    z-index: 11;
+    border-radius: 0;
+  }
+
+  /* 屏幕曲率阴影 */
+  .monitor-curve-shadow {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      ellipse at center,
+      transparent 50%,
+      rgba(0, 0, 0, 0.4) 90%,
+      rgba(0, 0, 0, 0.6) 100%
+    );
+    pointer-events: none;
+    z-index: 12;
+    border-radius: 0;
+  }
+
+  /* 底部控制条 */
+  .monitor-control-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 8px 0;
+    margin-top: 6px;
+    border-top: 3px solid var(--neo-ink);
+  }
+
+  .monitor-control-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .monitor-power-led,
+  .monitor-signal-led {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .monitor-led-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #ff2a6d;
+    box-shadow:
+      0 0 4px rgba(255, 42, 109, 0.8),
+      0 0 8px rgba(255, 42, 109, 0.4);
+    animation: ledPulse 2s ease-in-out infinite;
+  }
+
+  .monitor-led-signal {
+    background: #05ffa1;
+    box-shadow:
+      0 0 4px rgba(5, 255, 161, 0.8),
+      0 0 8px rgba(5, 255, 161, 0.4);
+    animation: ledPulse 1.5s ease-in-out infinite;
+  }
+
+  .monitor-led-label {
+    font-family: 'Orbitron', 'Noto Sans SC', sans-serif;
+    font-size: 7px;
+    letter-spacing: 0;
+    color: var(--neo-ink);
+    font-weight: 800;
+  }
+
+  .monitor-control-center {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .monitor-deco-btn {
+    width: 20px;
+    height: 8px;
+    border-radius: 0;
+    background: var(--neo-paper);
+    border: 2px solid var(--neo-ink);
+  }
+
+  .monitor-deco-btn-active {
+    background: var(--accent-tertiary);
+    border-color: var(--neo-ink);
+    box-shadow: 3px 3px 0 var(--neo-ink);
+  }
+
+  /* BGM 音量组（静音按钮 + 滑条） */
+  .monitor-bgm-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .monitor-bgm-mute {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    border: 2px solid var(--neo-ink);
+    border-radius: 0;
+    background: var(--neo-paper);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+
+  .monitor-bgm-mute:hover {
+    background: var(--accent-tertiary);
+  }
+
+  /* 赛博朋克风格滑条 */
+  .monitor-bgm-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 64px;
+    height: 10px;
+    background: var(--neo-paper);
+    border: 2px solid var(--neo-ink);
+    border-radius: 0;
+    outline: none;
+    cursor: pointer;
+    margin: 0;
+    padding: 0;
+  }
+
+  .monitor-bgm-slider::-webkit-slider-runnable-track {
+    height: 6px;
+    background: var(--neo-paper);
+    border-radius: 0;
+  }
+
+  .monitor-bgm-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    background: var(--neo-ink);
+    border: 2px solid var(--accent-tertiary);
+    border-radius: 0;
+    margin-top: -5px;
+    cursor: pointer;
+    box-shadow: 2px 2px 0 var(--neo-ink);
+  }
+
+  .monitor-bgm-slider::-moz-range-track {
+    height: 6px;
+    background: var(--neo-paper);
+    border: none;
+    border-radius: 0;
+  }
+
+  .monitor-bgm-slider::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    background: var(--neo-ink);
+    border: 2px solid var(--accent-tertiary);
+    border-radius: 0;
+    cursor: pointer;
+    box-shadow: 2px 2px 0 var(--neo-ink);
+  }
+
+  .monitor-control-right {
+    display: flex;
+    align-items: center;
+  }
+
+  .monitor-serial {
+    font-family: 'Rajdhani', 'Noto Sans SC', monospace;
+    font-size: 8px;
+    letter-spacing: 0;
+    color: var(--neo-ink);
+    font-weight: 700;
+  }
+
+  /* 显示器支架 */
+  .monitor-stand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: -2px;
+  }
+
+  .monitor-stand-neck {
+    width: 60px;
+    height: 24px;
+    background: var(--accent);
+    border-left: 4px solid var(--neo-ink);
+    border-right: 4px solid var(--neo-ink);
+  }
+
+  .monitor-stand-base {
+    width: 140px;
+    height: 8px;
+    background: var(--accent-secondary);
+    border: 4px solid var(--neo-ink);
+    border-radius: 0;
+    box-shadow:
+      7px 7px 0 var(--neo-ink);
+  }
+
+  /* 游戏内字号微放大：只作用于进入舞台后的控制台界面 */
+  .live-stage .text-\[7px\] {
+    font-size: 8px;
+  }
+
+  .live-stage .text-\[8px\] {
+    font-size: 9px;
+  }
+
+  .live-stage .text-\[9px\] {
+    font-size: 10px;
+  }
+
+  .live-stage .text-\[10px\] {
+    font-size: 11px;
+  }
+
+  .live-stage .text-\[11px\] {
+    font-size: 12px;
+  }
+
+  .live-stage .text-xs {
+    font-size: 13px;
+    line-height: 18px;
+  }
+
+  .live-stage .text-sm {
+    font-size: 15px;
+    line-height: 20px;
+  }
+}
+
+/* LED 呼吸动画 */
+@keyframes ledPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(0.85);
+  }
+}
+
+/* ============================================
+   引导系统动画
+   ============================================ */
+
+@keyframes tutorialFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes tutorialBubbleIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes tutorialSpotlightPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 9999px rgba(0,0,0,0.65), 0 0 8px var(--accent-glow);
+    border-color: var(--accent);
+  }
+  50% {
+    box-shadow: 0 0 0 9999px rgba(0,0,0,0.65), 0 0 16px var(--accent-secondary-glow);
+    border-color: var(--accent-secondary);
+  }
+}
+
+.animate-tutorial-fade-in {
+  animation: tutorialFadeIn 0.3s ease-out forwards;
+}
+
+.animate-tutorial-bubble-in {
+  animation: tutorialBubbleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-tutorial-spotlight-pulse {
+  animation: tutorialSpotlightPulse 2s ease-in-out infinite;
+}
