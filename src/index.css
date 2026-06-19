@@ -445,10 +445,56 @@ body {
     box-shadow: 0 0 8px currentColor;
   }
 
-  /* 舞台区域：统一青色细线边框，去掉杂乱的四角标记 */
+  /* 舞台区域：青色细线边框 + 灰色外框 + 黄色四角装饰 */
   .stage-reticle {
     position: relative;
     border: 1px solid rgba(0, 229, 255, 0.12);
+    outline: 1px solid var(--game-border);
+    outline-offset: 0;
+  }
+  .stage-reticle::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 16px;
+    height: 16px;
+    border-top: 2px solid var(--accent);
+    border-left: 2px solid var(--accent);
+    pointer-events: none;
+    z-index: 5;
+  }
+  .stage-reticle::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 16px;
+    height: 16px;
+    border-top: 2px solid var(--accent);
+    border-right: 2px solid var(--accent);
+    pointer-events: none;
+    z-index: 5;
+  }
+  .stage-reticle .corner-bl,
+  .stage-reticle .corner-br {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    pointer-events: none;
+    z-index: 5;
+  }
+  .stage-reticle .corner-bl {
+    bottom: 0;
+    left: 0;
+    border-bottom: 2px solid var(--accent);
+    border-left: 2px solid var(--accent);
+  }
+  .stage-reticle .corner-br {
+    bottom: 0;
+    right: 0;
+    border-bottom: 2px solid var(--accent);
+    border-right: 2px solid var(--accent);
   }
 
   @media (max-width: 640px) {

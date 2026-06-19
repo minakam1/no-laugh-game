@@ -251,18 +251,12 @@ export function PhaserCanvas({ onPerform, disabled }: PhaserCanvasProps) {
         }}
       />
 
-      {/* 直播舞台边框 - 精确跟随画布尺寸 */}
+      {/* 直播舞台浮层 - 精确跟随画布尺寸 */}
       <div
         ref={overlayRef}
-        className="absolute border border-game-border pointer-events-none z-10"
+        className="absolute pointer-events-none z-10 overflow-hidden"
         style={{ left: 0, top: 0, width: 0, height: 0 }}
       >
-        {/* 四角装饰 */}
-        <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-accent" />
-        <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-accent" />
-        <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-accent" />
-        <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-accent" />
-
         {/* REC 录制指示 */}
         <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-game-bg/80 px-2 py-1">
           <div className="w-2 h-2 bg-danger rounded-full animate-pulse" />

@@ -709,6 +709,9 @@ export function LiveStage({ apiConfig, onBackToMenu, onBackToConfig, onGoShop }:
 
             {/* Phaser 画布 + 质检员浮层覆盖 */}
             <div className="stage-reticle flex-1 min-h-0 relative overflow-hidden">
+              {/* 黄色四角装饰（底部两个角） */}
+              <div className="corner-bl" aria-hidden="true" />
+              <div className="corner-br" aria-hidden="true" />
               <div className="absolute inset-0">
                 <PhaserCanvas onPerform={handlePerform} disabled={isLoading} />
               </div>

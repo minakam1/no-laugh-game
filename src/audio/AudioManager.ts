@@ -384,6 +384,16 @@ class AudioManager {
     return this.audioBufferCache.has(url);
   }
 
+  /** 获取缓存的音频文件 */
+  getBuffer(url: string): AudioBuffer | undefined {
+    return this.audioBufferCache.get(url);
+  }
+
+  /** 设置缓存的音频文件 */
+  setBuffer(url: string, buffer: AudioBuffer): void {
+    this.audioBufferCache.set(url, buffer);
+  }
+
   /** 播放道具持续音效（返回停止函数） */
   playEffect(
     event: SfxEvent,
@@ -596,6 +606,58 @@ function playPerc(
   gain.connect(dest);
   osc.start(now);
   osc.stop(now + duration + 0.02);
+}
+
+/** 辅助：播放枪声音频文件（gun1.wav + gun2.mp3），使用传入的 ctx/dest */
+function playGunshotAudio(ctx: AudioContext, dest: AudioNode): void {
+  // 优先从 AudioManager 缓存取 AudioBuffer（预加载好的），用传入的 ctx 播放
+  const audio = getAudioManager();
+
+  const playBufferWithCtx = (url: string, offsetSec: number) => {
+    // 如果 AudioContext 被挂起，先恢复
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
+
+    const buffer = audio.getBuffer(url);
+    if (buffer) {
+      // 缓存命中，直接用传入的 ctx 播放
+      try {
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+        const gain = ctx.createGain();
+        gain.gain.value = 1;
+        source.connect(gain);
+        gain.connect(dest);
+        source.start(ctx.currentTime + offsetSec);
+      } catch {
+        // buffer 可能来自已关闭的旧 Context，静默忽略
+      }
+      return;
+    }
+
+    // 缓存未命中，用传入的 ctx 实时 fetch + decode + 播放
+    fetch(url)
+      .then((r) => r.arrayBuffer())
+      .then((ab) => ctx.decodeAudioData(ab))
+      .then((buf) => {
+        const source = ctx.createBufferSource();
+        source.buffer = buf;
+        const gain = ctx.createGain();
+        gain.gain.value = 1;
+        source.connect(gain);
+        gain.connect(dest);
+        source.start(ctx.currentTime + offsetSec);
+        // 同时缓存到 AudioManager 供后续使用
+        audio.setBuffer(url, buf);
+      })
+      .catch(() => {});
+  };
+
+  // 第一枪
+  playBufferWithCtx('/gun1.wav', 0);
+  // 第二枪（间隔0.6秒）
+  playBufferWithCtx('/gun2.mp3', 0.6);
 }
 
 // ---- 注册表 ----
@@ -1713,10 +1775,13 @@ const SFX_REGISTRY: Partial<Record<SfxEvent, SfxDef>> = {
   result_pass: {
     category: 'result',
     play: (ctx, dest) => {
-      // 通关 — 胜利旋律
+      // 通关 — 枪声 + 胜利旋律
+      // 先用枪声宣告（复用 result_fail 的枪声播放逻辑）
+      playGunshotAudio(ctx, dest);
+      // 枪声后接胜利旋律
       const notes = [523, 659, 784, 659, 784, 1047];
       notes.forEach((f, i) => {
-        setTimeout(() => playTone(ctx, dest, f, null, 0.3, 'sine', 0.1, 4000), i * 120);
+        setTimeout(() => playTone(ctx, dest, f, null, 0.3, 'sine', 0.1, 4000), 1000 + i * 120);
       });
     },
   },
@@ -1724,28 +1789,8 @@ const SFX_REGISTRY: Partial<Record<SfxEvent, SfxDef>> = {
   result_fail: {
     category: 'result',
     play: (ctx, dest) => {
-      // 处决 — 使用真实枪声音频文件 gun1.wav + gun2.mp3
-      const audio = getAudioManager();
-
-      // 播放音频文件的辅助函数
-      const playFile = (url: string, offset: number) => {
-        if (!audio.hasBuffer(url)) {
-          // 缓存未命中时，尝试实时加载播放
-          audio.loadAudioFile(url).then(() => {
-            audio.playBuffer(url, offset);
-          }).catch(() => {
-            // 加载失败时用合成音效作为兜底
-          });
-          return;
-        }
-        audio.playBuffer(url, offset);
-      };
-
-      // 第一枪 gun1.wav
-      playFile('/gun1.wav', 0);
-
-      // 第二枪 gun2.mp3（间隔0.6秒）
-      playFile('/gun2.mp3', 0.6);
+      // 处决 — 枪声 + 倒地音效
+      playGunshotAudio(ctx, dest);
 
       // 倒地音效
       setTimeout(() => {

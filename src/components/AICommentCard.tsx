@@ -47,6 +47,9 @@ export function AICommentCard() {
     setShowMotion(false);
   }, [lastRound]);
 
+  // 判断当前是否在展示评语（活跃状态 或 等待状态但有 lastRound）
+  const isShowingReason = !!(lastRound && judgeDismissedRound < rounds.length) || !!lastRound;
+
   // 检测评语文本宽度是否溢出容器
   useEffect(() => {
     const container = scrollContainerRef.current;
@@ -55,7 +58,7 @@ export function AICommentCard() {
         setIsOverflowing(container.scrollWidth > container.clientWidth + 2);
       });
     }
-  }, [lastRound?.reason]);
+  }, [lastRound?.reason, isShowingReason]);
 
   // 溢出时自动左右滚动播放（悬停时暂停）
   useEffect(() => {
@@ -95,7 +98,7 @@ export function AICommentCard() {
 
     animationId = requestAnimationFrame(step);
     return () => cancelAnimationFrame(animationId);
-  }, [isOverflowing, isHovering, lastRound?.reason]);
+  }, [isOverflowing, isHovering, lastRound?.reason, isShowingReason]);
 
   // 有最新回合且未关闭 → 紧凑质检员评语浮层
   if (lastRound && judgeDismissedRound < rounds.length) {
@@ -189,19 +192,31 @@ export function AICommentCard() {
     );
   }
 
-  // 没有最新回合 / 用户已关闭 → 等待状态条
+  // 没有最新回合 / 用户已关闭 → 等待状态条（保留评语滚动）
   return (
     <div className="bg-black/85 backdrop-blur-sm border-t border-accent/20">
       <div className="flex items-center gap-2 px-3 py-1.5">
         <div className="w-5 h-5 border border-accent/30 bg-accent/10 flex items-center justify-center shrink-0">
           <span className="font-cyber text-[8px] text-accent leading-none">AI</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
           <span className="font-cyber text-[9px] text-game-text-dim tracking-wider shrink-0">
             INSPECTOR // {DIFFICULTY_CONFIG[currentLevel]?.name || 'UNKNOWN'}
           </span>
           {lastRound ? (
-            <span className="text-[11px] text-game-text font-data truncate">{lastRound.reason || '质检员沉默不语'}</span>
+            <div
+              ref={scrollContainerRef}
+              className="flex-1 overflow-hidden min-w-0"
+              onMouseEnter={() => setIsHovering(true)}
+              onMouseLeave={() => setIsHovering(false)}
+            >
+              <p
+                ref={reasonRef}
+                className="text-[11px] text-game-text font-data leading-relaxed whitespace-nowrap"
+              >
+                {lastRound.reason || '质检员沉默不语'}
+              </p>
+            </div>
           ) : isIdle ? (
             <span className="text-[11px] text-game-text-dim font-data">[ 质检员打了个盹... ]</span>
           ) : (
