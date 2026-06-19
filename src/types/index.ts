@@ -143,15 +143,16 @@ export interface SceneConfig {
   label: string;
   labelCn: string;
   description: string;
+  cost: number;
   preview: string;
 }
 
 export const SCENE_CONFIGS: readonly SceneConfig[] = [
-  { key: 'normal', label: 'NONE', labelCn: '无', description: '默认重力模式', preview: "url('/assets/scenes/scene-bg-normal.png') center / cover no-repeat" },
-  { key: 'cliff', label: 'CLIFF', labelCn: '悬崖', description: '舞台右侧有悬崖，掉下去的东西会消失', preview: "url('/assets/scenes/scene-bg-cliff.png') center / cover no-repeat" },
-  { key: 'rapids', label: 'RAPID', labelCn: '猛龙过江', description: '底部有快速河流，物品会随河流移动', preview: "url('/assets/scenes/scene-bg-rapids.png') center / cover no-repeat" },
-  { key: 'darkness', label: 'DARK', labelCn: '至暗时刻', description: '直到开始表演前舞台都是黑色', preview: "url('/assets/scenes/scene-bg-darkness.png') center / cover no-repeat" },
-  { key: 'windstorm', label: 'WIND', labelCn: '暴风', description: '所有物品都会被风吹起来', preview: "url('/assets/scenes/scene-bg-windstorm.png') center / cover no-repeat" },
+  { key: 'normal', label: 'NONE', labelCn: '无', description: '默认重力模式', cost: 0, preview: "url('/assets/scenes/scene-bg-normal.png') center / cover no-repeat" },
+  { key: 'cliff', label: 'CLIFF', labelCn: '悬崖', description: '舞台右侧有悬崖，掉下去的东西会消失', cost: 8, preview: "url('/assets/scenes/scene-bg-cliff.png') center / cover no-repeat" },
+  { key: 'rapids', label: 'RAPID', labelCn: '猛龙过江', description: '底部有快速河流，物品会随河流移动', cost: 6, preview: "url('/assets/scenes/scene-bg-rapids.png') center / cover no-repeat" },
+  { key: 'darkness', label: 'DARK', labelCn: '至暗时刻', description: '直到开始表演前舞台都是黑色', cost: 4, preview: "url('/assets/scenes/scene-bg-darkness.png') center / cover no-repeat" },
+  { key: 'windstorm', label: 'WIND', labelCn: '暴风', description: '所有物品都会被风吹起来', cost: 10, preview: "url('/assets/scenes/scene-bg-windstorm.png') center / cover no-repeat" },
 ];
 
 // ============ 引导系统 ============
@@ -229,6 +230,8 @@ export interface GameData {
   gameStartTime: number;
   /** 商店道具持有数 */
   inventory: Record<string, number>;
+  /** 已解锁的场景设定 */
+  unlockedScenes: SceneType[];
   /** 本关已激活的商店道具效果 */
   activeShopEffects: string[];
   /** 难度：'normal' | 'hard'，默认 normal */
@@ -257,7 +260,7 @@ export interface GameState extends GameData {
   clearCanvas: () => void;
   setMode: (mode: 'story' | 'endless', level?: number, difficulty?: 'normal' | 'hard') => void;
   setDifficulty: (difficulty: 'normal' | 'hard') => void;
-  setSceneType: (sceneType: SceneType) => void;
+  setSceneType: (sceneType: SceneType) => boolean;
   loadSave: (data: SaveData) => void;
   /** 花费头肯，返回是否成功 */
   spendPoints: (amount: number) => boolean;
@@ -287,6 +290,8 @@ export interface GameState extends GameData {
   skipTutorial: () => void;
   /** 重新开始新手引导 */
   restartTutorial: () => void;
+  /** 开发者：清空游戏记录并恢复初始状态 */
+  resetGameRecords: () => void;
 }
 
 /** 加分结算结果 */
@@ -325,6 +330,8 @@ export interface SaveData {
   hasBeatenFirstLevel: boolean;
   /** 商店道具库存 */
   inventory: Record<string, number>;
+  /** 已解锁的场景设定 */
+  unlockedScenes?: SceneType[];
   /** 是否已完成新手引导 */
   tutorialCompleted: boolean;
   savedAt: number;

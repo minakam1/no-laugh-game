@@ -5,7 +5,7 @@
 // ============================================================
 
 import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
-import { useGameStore, DIFFICULTY_CONFIG, SUPER_CHAT_REWARD, SCORE_TO_POINTS, getPassThreshold } from '@/store/gameStore';
+import { useGameStore, DIFFICULTY_CONFIG, calcRoundPointsReward, getPassThreshold } from '@/store/gameStore';
 import { useAchievementStore } from '@/store/achievementStore';
 import { usePerform } from '@/hooks/usePerform';
 import { useResponsive } from '@/hooks/useResponsive';
@@ -21,8 +21,8 @@ import { WishNameInput } from './WishNameInput';
 import { ShopItemBar } from './ShopItemBar';
 import { HoverTranslate } from './HoverTranslate';
 import { getSoundManager } from '@/audio/SoundManager';
-import { generatePresetDanmaku, generateEditingDanmaku, generateTransitionDanmaku, randomOffensive, isOffensiveDanmaku } from '@/data/presetDanmaku';
-import { BOSS_OPENING_LINES } from '@/data/bossOpeningLines';
+import { generatePresetDanmaku, generateEditingDanmaku, generateTransitionDanmaku, randomOffensive } from '@/data/presetDanmaku';
+import { AUDIENCE_OPENING_LINES } from '@/data/bossOpeningLines';
 import { eventBus } from '@/phaser/bridges/PhaserEventBus';
 import type { ApiConfig } from './ApiKeyInput';
 import { PROP_LIST, PROP_MANIFEST, type PropKey } from '@/phaser/assets/manifest';
@@ -132,6 +132,7 @@ export function LiveStage({ apiConfig, onBackToMenu, onBackToConfig, onGoShop }:
   const passThreshold = getPassThreshold(currentLevel, difficulty);
   const sceneType = useGameStore((s) => s.sceneType);
   const setSceneType = useGameStore((s) => s.setSceneType);
+  const unlockedScenes = useGameStore((s) => s.unlockedScenes);
 
   // usePerform hook
   const { reaction, isLoading, error, handlePerform, dismissError } = usePerform(apiConfig);
@@ -143,39 +144,41 @@ export function LiveStage({ apiConfig, onBackToMenu, onBackToConfig, onGoShop }:
   const presetIdRef = useRef(0);
   const phaseStartTimeRef = useRef<number>(0);
   const transitionFiredRef = useRef(false); // 过渡爆发是否已触发
-  const bossLineFiredLevelRef = useRef(0);
+  const openingLineFiredLevelRef = useRef(0);
 
   // ============================================================
-  // Boss 开场 SC：关卡首次进入编辑阶段时延迟1秒注入 SuperChat
+  // 普通观众开场 SC：关卡首次进入编辑阶段时延迟1秒注入 SuperChat
   // ============================================================
-  const bossTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const openingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [stageError, setStageError] = useState<string | null>(null);
   useEffect(() => {
     if (
       mode === 'story'
       && phase === 'editing'
       && currentLevel > 0
-      && bossLineFiredLevelRef.current !== currentLevel
+      && openingLineFiredLevelRef.current !== currentLevel
     ) {
-      const opening = BOSS_OPENING_LINES[currentLevel];
+      const opening = AUDIENCE_OPENING_LINES[currentLevel];
       if (!opening) return;
 
-      bossTimerRef.current = setTimeout(() => {
-        bossLineFiredLevelRef.current = currentLevel;
-        const bossItem: DanmakuItem = {
+      openingTimerRef.current = setTimeout(() => {
+        openingLineFiredLevelRef.current = currentLevel;
+        const openingItem: DanmakuItem = {
           text: opening.text,
           score: 10,
           round: currentLevel,
-          bossOpening: opening,
+          audienceOpening: opening,
+          senderName: opening.viewerName,
         };
-        allDanmakuRef.current = [bossItem, ...allDanmakuRef.current];
+        allDanmakuRef.current = [openingItem, ...allDanmakuRef.current];
         setListVersion((v) => v + 1);
         sound.play('perform_start');
       }, 1000);
     }
     return () => {
-      if (bossTimerRef.current) {
-        clearTimeout(bossTimerRef.current);
-        bossTimerRef.current = null;
+      if (openingTimerRef.current) {
+        clearTimeout(openingTimerRef.current);
+        openingTimerRef.current = null;
       }
     };
   }, [mode, phase, currentLevel, sound]);
@@ -190,11 +193,19 @@ export function LiveStage({ apiConfig, onBackToMenu, onBackToConfig, onGoShop }:
     return unsub;
   }, []);
 
+  useEffect(() => {
+    const unsub = eventBus.on('scene-error', (data: unknown) => {
+      const { error } = data as { error?: Error };
+      setStageError(error?.message || '舞台操作失败');
+    });
+    return unsub;
+  }, []);
+
   // ============================================================
-  // Boss 提示开关（舞台底部显示，默认关闭）
+  // 关卡提示开关（舞台底部显示，默认关闭）
   // ============================================================
-  const [showBossHint, setShowBossHint] = useState(false);
-  const bossHint = BOSS_OPENING_LINES[currentLevel];
+  const [showLevelHint, setShowLevelHint] = useState(false);
+  const levelHint = AUDIENCE_OPENING_LINES[currentLevel];
   const fireDanmakuBurst = useCallback((generator: () => string, count: number, allowOffensive = false) => {
     for (let i = 0; i < count; i++) {
       // 爆发时稍微错开时间，避免完全同步
@@ -337,19 +348,21 @@ export function LiveStage({ apiConfig, onBackToMenu, onBackToConfig, onGoShop }:
     if (rounds.length > prevRoundsLenRef.current) {
       // 有新回合，追加新的 AI 弹幕
       const newItems: DanmakuItem[] = [];
+      const fixedSenderName = AUDIENCE_OPENING_LINES[currentLevel]?.viewerName;
       for (let i = prevRoundsLenRef.current; i < rounds.length; i++) {
         const r = rounds[i];
         newItems.push({
           text: r.reaction,
           score: r.funnyScore,
           round: i + 1,
-          pointsReward: Math.round(r.funnyScore * SCORE_TO_POINTS) + SUPER_CHAT_REWARD,
+          pointsReward: calcRoundPointsReward(r.funnyScore, difficulty),
+          senderName: fixedSenderName,
         });
       }
       allDanmakuRef.current = [...allDanmakuRef.current, ...newItems];
     }
     prevRoundsLenRef.current = rounds.length;
-  }, [rounds]);
+  }, [rounds, currentLevel, difficulty]);
 
   // 同步预设弹幕：增量追加，不删除旧数据
   const prevPresetLenRef = useRef(0);
@@ -477,9 +490,25 @@ export function LiveStage({ apiConfig, onBackToMenu, onBackToConfig, onGoShop }:
 
   const handleMobileSceneSelect = useCallback((key: SceneType) => {
     if (key === sceneType) return;
-    setSceneType(key);
+    if (!unlockedScenes.includes(key)) {
+      const scene = SCENE_CONFIGS.find((item) => item.key === key);
+      eventBus.emit('scene-error', { error: new Error(`场景未解锁！请先在公会购买「${scene?.labelCn ?? '场景'}许可」`) });
+      return;
+    }
+    const changed = setSceneType(key);
+    if (!changed) {
+      const scene = SCENE_CONFIGS.find((item) => item.key === key);
+      eventBus.emit('scene-error', { error: new Error(`头肯不足！切换${scene?.labelCn ?? '场景'}需要 ${scene?.cost ?? 0} 头肯`) });
+      return;
+    }
     eventBus.emit('request-set-scene', { key });
-  }, [sceneType, setSceneType]);
+  }, [sceneType, setSceneType, unlockedScenes]);
+
+  const visibleError = error || stageError;
+  const dismissVisibleError = () => {
+    if (error) dismissError();
+    else setStageError(null);
+  };
 
   const mobileProps = useMemo(
     () => [...PROP_LIST].sort((a, b) => PROP_MANIFEST[a].cost - PROP_MANIFEST[b].cost),
@@ -558,7 +587,7 @@ export function LiveStage({ apiConfig, onBackToMenu, onBackToConfig, onGoShop }:
       <ShopItemBar />
 
       {/* 错误提示 */}
-      {error && <ErrorBanner message={error} onDismiss={dismissError} />}
+      {visibleError && <ErrorBanner message={visibleError} onDismiss={dismissVisibleError} />}
 
       {/* === 主体区域：响应式布局 === */}
       <div
@@ -599,6 +628,8 @@ export function LiveStage({ apiConfig, onBackToMenu, onBackToConfig, onGoShop }:
             <div className="flex gap-2 overflow-x-auto px-2 pb-2">
               {SCENE_CONFIGS.map((scene) => {
                 const selected = sceneType === scene.key;
+                const isUnlocked = unlockedScenes.includes(scene.key);
+                const canAfford = isUnlocked && (selected || points >= scene.cost);
                 return (
                   <button
                     key={scene.key}
@@ -607,10 +638,17 @@ export function LiveStage({ apiConfig, onBackToMenu, onBackToConfig, onGoShop }:
                     className={`shrink-0 border px-3 py-1 font-data text-xs transition-all ${
                       selected
                         ? 'border-purple-300 bg-purple-500 text-black'
-                        : 'border-game-border/50 bg-game-bg/40 text-game-text-dim hover:border-purple-300 hover:text-purple-300'
+                        : !isUnlocked
+                          ? 'border-game-border/20 bg-game-bg/30 text-game-text-dim/30 cursor-not-allowed'
+                        : canAfford
+                          ? 'border-game-border/50 bg-game-bg/40 text-game-text-dim hover:border-purple-300 hover:text-purple-300'
+                          : 'border-game-border/20 bg-game-bg/30 text-game-text-dim/30 cursor-not-allowed'
                     }`}
                   >
-                    {scene.labelCn}
+                    <span className="block">{scene.labelCn}</span>
+                    <span className={`block text-[10px] ${canAfford ? 'text-accent/80' : 'text-danger/60'}`}>
+                      {!isUnlocked ? 'LOCK' : scene.cost === 0 ? 'FREE' : `${scene.cost}`}
+                    </span>
                   </button>
                 );
               })}
@@ -633,10 +671,10 @@ export function LiveStage({ apiConfig, onBackToMenu, onBackToConfig, onGoShop }:
               <span className="font-data text-[10px] text-game-text-dim">
                 LV{currentLevel} // {difficultyName}
               </span>
-              {/* Boss 策略提示按钮 — 点击弹出独立弹窗 */}
-              {mode === 'story' && bossHint && (
+              {/* 关卡策略提示按钮 — 点击弹出独立弹窗 */}
+              {mode === 'story' && levelHint && (
                 <button
-                  onClick={() => { sound.play('ui_button_press'); setShowBossHint(true); }}
+                  onClick={() => { sound.play('ui_button_press'); setShowLevelHint(true); }}
                   onMouseEnter={() => sound.play('ui_button_hover')}
                   className="font-cyber text-[9px] tracking-wider px-2 py-0.5 rounded-sm border border-game-border/50 text-game-text-dim/50 hover:border-yellow-500/30 transition-all"
                 >
@@ -645,20 +683,20 @@ export function LiveStage({ apiConfig, onBackToMenu, onBackToConfig, onGoShop }:
               )}
             </div>
 
-            {/* Boss 策略提示弹窗 — 不占用布局空间 */}
-            {showBossHint && bossHint && (
+            {/* 关卡策略提示弹窗 — 不占用布局空间 */}
+            {showLevelHint && levelHint && (
               <>
-                <div className="fixed inset-0 z-[9998]" onClick={() => setShowBossHint(false)} />
+                <div className="fixed inset-0 z-[9998]" onClick={() => setShowLevelHint(false)} />
                 <div className="absolute top-12 right-4 z-[9999] w-64 animate-fade-in">
                   <div className="bg-game-surface border border-yellow-500/30 rounded-md p-3 shadow-lg shadow-yellow-900/20">
                     <div className="flex items-start gap-2">
                       <span className="text-lg shrink-0">💡</span>
                       <div className="flex-1 min-w-0">
                         <p className="font-cyber text-[10px] text-yellow-400 tracking-wider mb-1">关卡提示</p>
-                        <p className="font-data text-[11px] text-yellow-100/80 leading-relaxed">{bossHint.hintTip}</p>
+                        <p className="font-data text-[11px] text-yellow-100/80 leading-relaxed">{levelHint.hintTip}</p>
                       </div>
                       <button
-                        onClick={() => { sound.play('ui_button_press'); setShowBossHint(false); }}
+                        onClick={() => { sound.play('ui_button_press'); setShowLevelHint(false); }}
                         className="text-yellow-400/50 hover:text-yellow-300 text-xs shrink-0"
                       >
                         ✕

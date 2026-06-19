@@ -4,6 +4,7 @@
 
 import { create } from 'zustand';
 import { eventBus } from '@/phaser/bridges/PhaserEventBus';
+import { SCENE_CONFIGS } from '@/types';
 import type {
   GameState,
   RoundResult,
@@ -29,10 +30,11 @@ export const DIFFICULTY_CONFIG: Record<number, DifficultyConfig> = {
 };
 
 /** 头肯常量 */
-export const INITIAL_POINTS = 35;
-export const INITIAL_POINTS_ENDLESS = 45;
-export const SUPER_CHAT_REWARD = 15;
-export const SCORE_TO_POINTS = 3;
+export const INITIAL_POINTS = 28;
+export const INITIAL_POINTS_ENDLESS = 36;
+export const LEVEL_START_POINTS_BONUS = 2;
+export const SUPER_CHAT_REWARD = 5;
+export const SCORE_TO_POINTS = 1;
 
 // ============ 加分系统常量（类似愤怒的小鸟） ============
 /** 普通模式通关基础门槛 */
@@ -43,18 +45,18 @@ export const HARD_DECAY_MULTIPLIER = 2.0;
 export const HARD_GAIN_MULTIPLIER = 0.7;
 /** 困难模式头肯获取倍率（收益减少） */
 export const HARD_POINTS_MULTIPLIER = 0.6;
-/** 超出门槛每分换头肯的倍率 */
-export const BONUS_KENTOU_RATE = 1;
+/** 超出门槛每分换肯头的倍率 */
+export const BONUS_KENTOU_RATE = 0.35;
 /** 困难模式加分倍率 */
-export const HARD_BONUS_RATE = 0.8;
-/** 轮数奖励：每节省一轮奖励头肯数 */
-export const ROUND_BONUS_PER_SAVED = 2;
-/** 时间奖励：每秒节省奖励头肯数（3分钟=180秒基准） */
-export const TIME_BONUS_PER_SEC = 0.2;
+export const HARD_BONUS_RATE = 0.5;
+/** 轮数奖励：每节省一轮奖励肯头数 */
+export const ROUND_BONUS_PER_SAVED = 1;
+/** 时间奖励：每秒节省奖励肯头数（3分钟=180秒基准） */
+export const TIME_BONUS_PER_SEC = 0.05;
 /** 时间基准：3分钟 = 180秒 */
 export const TIME_BASELINE_SEC = 180;
-/** 通关基础头肯奖励 */
-export const CLEAR_BONUS_KENTOU = 5;
+/** 通关基础肯头奖励 */
+export const CLEAR_BONUS_KENTOU = 2;
 
 /** 根据难度获取当前通关阈值 */
 export function getPassThreshold(level: number, difficulty: 'normal' | 'hard'): number {
@@ -63,6 +65,23 @@ export function getPassThreshold(level: number, difficulty: 'normal' | 'hard'): 
   }
   return PASS_THRESHOLD;
 }
+
+export function calcRoundPointsReward(funnyScore: number, difficulty: 'normal' | 'hard'): number {
+  if (funnyScore <= 0) return 0;
+  const pointsMultiplier = difficulty === 'hard' ? HARD_POINTS_MULTIPLIER : 1.0;
+  return Math.round((Math.round(funnyScore * SCORE_TO_POINTS) + SUPER_CHAT_REWARD) * pointsMultiplier);
+}
+
+function getStartingPoints(mode: 'story' | 'endless', level: number): number {
+  if (mode === 'endless') return INITIAL_POINTS_ENDLESS;
+  return INITIAL_POINTS + (level - 1) * LEVEL_START_POINTS_BONUS;
+}
+
+function getSceneSwitchCost(sceneType: SceneType): number {
+  return SCENE_CONFIGS.find((scene) => scene.key === sceneType)?.cost ?? 0;
+}
+
+const DEFAULT_UNLOCKED_SCENES: SceneType[] = ['normal', 'rapids', 'darkness'];
 
 // ============ 商店道具类型 ============
 export interface ShopItem {
@@ -73,6 +92,7 @@ export interface ShopItem {
   cost: number;
   effect: string; // 效果描述
   maxOwn: number; // 最大持有数
+  sceneUnlock?: SceneType; // 永久解锁场景
 }
 
 /** 商店道具定义 */
@@ -131,6 +151,26 @@ export const SHOP_ITEMS: Record<string, ShopItem> = {
     effect: 'retry_level',
     maxOwn: 1,
   },
+  sceneCliff: {
+    id: 'sceneCliff',
+    name: '悬崖许可',
+    emoji: '🧗',
+    description: '永久解锁「悬崖」场景',
+    cost: 20,
+    effect: 'unlock_scene_cliff',
+    maxOwn: 1,
+    sceneUnlock: 'cliff',
+  },
+  sceneWindstorm: {
+    id: 'sceneWindstorm',
+    name: '暴风许可',
+    emoji: '🌪️',
+    description: '永久解锁「暴风」场景',
+    cost: 30,
+    effect: 'unlock_scene_windstorm',
+    maxOwn: 1,
+    sceneUnlock: 'windstorm',
+  },
 };
 
 const SAVE_VERSION = 1;
@@ -138,28 +178,35 @@ const SAVE_KEY = 'no-laugh-save';
 const DB_NAME = 'NoLaughDB';
 const DB_STORE = 'saves';
 
+function createInitialGameData() {
+  return {
+    meter: { value: 0, rounds: [], decayMap: {} },
+    currentLevel: 1,
+    currentRound: 1,
+    maxRounds: 10,
+    mode: 'story' as const,
+    phase: 'editing' as const,
+    unlockedLevels: 1,
+    bestScores: {},
+    endlessHighScore: 0,
+    endlessBestLevel: 1,
+    judgeDismissedRound: 0,
+    points: INITIAL_POINTS,
+    kentou: 0,
+    hasBeatenFirstLevel: false,
+    gameStartTime: 0,
+    inventory: {},
+    unlockedScenes: [...DEFAULT_UNLOCKED_SCENES],
+    activeShopEffects: [],
+    difficulty: 'normal' as const,
+    sceneType: 'normal' as const,
+    tutorialStep: null,
+    tutorialCompleted: false,
+  };
+}
+
 export const useGameStore = create<GameState>((set, get) => ({
-  meter: { value: 0, rounds: [], decayMap: {} },
-  currentLevel: 1,
-  currentRound: 1,
-  maxRounds: 10,
-  mode: 'story',
-  phase: 'editing',
-  unlockedLevels: 1,
-  bestScores: {},
-  endlessHighScore: 0,
-  endlessBestLevel: 1,
-  judgeDismissedRound: 0,
-  points: INITIAL_POINTS,
-  kentou: 0,
-  hasBeatenFirstLevel: false,
-  gameStartTime: 0,
-  inventory: {},
-  activeShopEffects: [],
-  difficulty: 'normal',
-  sceneType: 'normal',
-  tutorialStep: null,
-  tutorialCompleted: false,
+  ...createInitialGameData(),
 
   markGameStart: () => {
     set({ gameStartTime: Date.now() });
@@ -221,8 +268,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const isLevelComplete = mode === 'story' && newRound > maxRounds;
 
     // 每次表演获得头肯（困难模式收益减少）
-    const pointsMultiplier = difficulty === 'hard' ? HARD_POINTS_MULTIPLIER : 1.0;
-    const earnedPoints = Math.round((Math.round(funnyScore * SCORE_TO_POINTS) + SUPER_CHAT_REWARD) * pointsMultiplier);
+    const earnedPoints = calcRoundPointsReward(funnyScore, difficulty);
     
     // 消耗一次性商店道具效果，仅保留整关持续效果
     const persistentEffects = activeShopEffects.filter((e) => e === 'rounds_plus_2');
@@ -264,14 +310,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         updates.hasBeatenFirstLevel = true;
       }
 
-      // 通关奖励：超出门槛的部分转换为肯头
-      if (passed) {
-        const overThreshold = Math.round(newValue - threshold);
-        const kentouEarned = Math.max(0, overThreshold * BONUS_KENTOU_RATE);
-        if (kentouEarned > 0) {
-          updates.kentou = state.kentou + kentouEarned;
-        }
-      }
+      // 肯头通关奖励由 ResultModal 统一发放，避免满回合结算重复到账。
     }
 
     // 无尽模式最高分
@@ -383,19 +422,22 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   nextLevel: () => {
-    set((s) => ({
-      currentLevel:
+    set((s) => {
+      const nextLevel =
         s.mode === 'story'
           ? Math.min(s.currentLevel + 1, s.unlockedLevels)
-          : Math.min(s.currentLevel + 1, 99),
-      currentRound: 1,
-      meter: { value: 0, rounds: [], decayMap: {} },
-      phase: 'editing',
-      judgeDismissedRound: 0,
-      gameStartTime: Date.now(),
-      activeShopEffects: [],
-      points: s.mode === 'endless' ? INITIAL_POINTS_ENDLESS : INITIAL_POINTS + (s.currentLevel * 3),
-    }));
+          : Math.min(s.currentLevel + 1, 99);
+      return {
+        currentLevel: nextLevel,
+        currentRound: 1,
+        meter: { value: 0, rounds: [], decayMap: {} },
+        phase: 'editing',
+        judgeDismissedRound: 0,
+        gameStartTime: Date.now(),
+        activeShopEffects: [],
+        points: getStartingPoints(s.mode, nextLevel),
+      };
+    });
   },
 
   reset: () => {
@@ -407,7 +449,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       gameStartTime: Date.now(),
       activeShopEffects: [],
       // 重置头肯到初始值
-      points: s.mode === 'endless' ? INITIAL_POINTS_ENDLESS : INITIAL_POINTS + (s.currentLevel - 1) * 3,
+      points: getStartingPoints(s.mode, s.currentLevel),
     }));
   },
 
@@ -432,7 +474,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       judgeDismissedRound: 0,
       gameStartTime: Date.now(),
       difficulty: diff,
-      points: mode === 'endless' ? INITIAL_POINTS_ENDLESS : INITIAL_POINTS + (lvl - 1) * 3,
+      points: getStartingPoints(mode, lvl),
     });
   },
 
@@ -441,7 +483,18 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   setSceneType: (sceneType: SceneType) => {
-    set({ sceneType });
+    const state = get();
+    if (sceneType === state.sceneType) return true;
+    if (!state.unlockedScenes.includes(sceneType)) return false;
+
+    const cost = getSceneSwitchCost(sceneType);
+    if (state.points < cost) return false;
+
+    set({ sceneType, points: state.points - cost });
+    if (cost > 0) {
+      useAchievementStore.getState().trackSpend(cost);
+    }
+    return true;
   },
 
   loadSave: (data: SaveData) => {
@@ -454,6 +507,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       kentou: data.kentou ?? 0,
       hasBeatenFirstLevel: data.hasBeatenFirstLevel ?? false,
       inventory: data.inventory ?? {},
+      unlockedScenes: data.unlockedScenes ?? [...DEFAULT_UNLOCKED_SCENES],
       tutorialCompleted: data.tutorialCompleted ?? false,
       tutorialStep: (data.tutorialCompleted ?? false) ? null : null,
     });
@@ -532,6 +586,17 @@ export const useGameStore = create<GameState>((set, get) => ({
     const state = get();
     const item = SHOP_ITEMS[itemId];
     if (!item) return false;
+
+    if (item.sceneUnlock) {
+      if (state.unlockedScenes.includes(item.sceneUnlock)) return false;
+      if (state.kentou < item.cost) return false;
+
+      set({
+        kentou: state.kentou - item.cost,
+        unlockedScenes: [...state.unlockedScenes, item.sceneUnlock],
+      });
+      return true;
+    }
     
     const owned = state.inventory[itemId] || 0;
     if (owned >= item.maxOwn) return false;
@@ -552,6 +617,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     const item = SHOP_ITEMS[itemId];
     if (!item) return false;
+    if (item.sceneUnlock) return false;
 
     const newInventory = { ...state.inventory, [itemId]: owned - 1 };
     if (newInventory[itemId] <= 0) delete newInventory[itemId];
@@ -591,6 +657,10 @@ export const useGameStore = create<GameState>((set, get) => ({
   restartTutorial: () => {
     set({ tutorialStep: 'welcome', tutorialCompleted: false });
   },
+
+  resetGameRecords: () => {
+    set(createInitialGameData());
+  },
 }));
 
 // ============ 存档序列化（README 3.4 节）============
@@ -614,6 +684,7 @@ export function serializeSave(): SaveData {
     kentou: state.kentou,
     hasBeatenFirstLevel: state.hasBeatenFirstLevel,
     inventory: state.inventory,
+    unlockedScenes: state.unlockedScenes,
     tutorialCompleted: state.tutorialCompleted,
     savedAt: Date.now(),
   };
@@ -655,6 +726,23 @@ function readIndexedDB(): Promise<SaveData | null> {
   });
 }
 
+function clearIndexedDBSave(): Promise<void> {
+  return openDB().then((db) => {
+    return new Promise<void>((resolve) => {
+      const tx = db.transaction(DB_STORE, 'readwrite');
+      tx.objectStore(DB_STORE).delete('current');
+      tx.oncomplete = () => {
+        db.close();
+        resolve();
+      };
+      tx.onerror = () => {
+        db.close();
+        resolve();
+      };
+    });
+  });
+}
+
 export async function saveToStorage(): Promise<boolean> {
   const data = serializeSave();
   try {
@@ -668,6 +756,20 @@ export async function saveToStorage(): Promise<boolean> {
     } catch {
       return false;
     }
+  }
+}
+
+export async function clearStoredSave(): Promise<void> {
+  try {
+    localStorage.removeItem(SAVE_KEY);
+  } catch {
+    // ignore
+  }
+
+  try {
+    await clearIndexedDBSave();
+  } catch {
+    // ignore
   }
 }
 

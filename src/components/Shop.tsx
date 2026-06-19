@@ -1,5 +1,5 @@
 // ============================================================
-// Shop — 场外商店（赛博朋克黑市风格）
+// Shop — 场外商店（赛博朋克公会风格）
 // 购买道具降低挑战难度
 // ============================================================
 
@@ -17,6 +17,7 @@ export function Shop({ onBack }: ShopProps) {
   const kentou = useGameStore((s) => s.kentou);
   const hasBeatenFirstLevel = useGameStore((s) => s.hasBeatenFirstLevel);
   const inventory = useGameStore((s) => s.inventory);
+  const unlockedScenes = useGameStore((s) => s.unlockedScenes);
   const buyShopItem = useGameStore((s) => s.buyShopItem);
 
   const [popup, setPopup] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
@@ -29,7 +30,9 @@ export function Shop({ onBack }: ShopProps) {
   }, []);
 
   const handleBuy = (item: ShopItem) => {
-    const owned = inventory[item.id] || 0;
+    const owned = item.sceneUnlock && unlockedScenes.includes(item.sceneUnlock)
+      ? 1
+      : inventory[item.id] || 0;
     if (owned >= item.maxOwn) {
       sound.play('ui_purchase_fail');
       showPopup(`已达到最大持有数 (${item.maxOwn})`, 'error');
@@ -43,7 +46,7 @@ export function Shop({ onBack }: ShopProps) {
     const success = buyShopItem(item.id);
     if (success) {
       sound.play('ui_purchase');
-      showPopup(`购买成功！获得 ${item.emoji} ${item.name}`, 'success');
+      showPopup(`${item.sceneUnlock ? '解锁成功' : '购买成功'}！获得 ${item.emoji} ${item.name}`, 'success');
     } else {
       sound.play('ui_purchase_fail');
       showPopup('购买失败', 'error');
@@ -76,9 +79,9 @@ export function Shop({ onBack }: ShopProps) {
         <div className="flex items-center justify-between px-4 py-2">
           <div className="flex items-center gap-3">
             <span className="font-cyber text-sm text-accent-tertiary tracking-wider">
-              🛒 BLACK MARKET
+              🛒 GUILD
             </span>
-            <span className="status-icon hidden sm:inline-flex text-accent-tertiary" aria-hidden="true">MKT</span>
+            <span className="status-icon hidden sm:inline-flex text-accent-tertiary" aria-hidden="true">GLD</span>
             <span className="font-data text-[10px] text-game-text-dim">
               // 道具降低挑战难度，让质检员放你一马
             </span>
@@ -125,13 +128,15 @@ export function Shop({ onBack }: ShopProps) {
               商店未解锁
             </h3>
             <p className="font-data text-xs text-game-text-dim/60">
-              通关第一局游戏后解锁黑市商店
+              通关第一局游戏后解锁公会
             </p>
           </div>
         )}
         <div className={`max-w-lg mx-auto space-y-3 ${!hasBeatenFirstLevel ? 'opacity-30 pointer-events-none' : ''}`}>
           {items.map((item) => {
-            const owned = inventory[item.id] || 0;
+            const owned = item.sceneUnlock && unlockedScenes.includes(item.sceneUnlock)
+              ? 1
+              : inventory[item.id] || 0;
             const maxed = owned >= item.maxOwn;
             const canAfford = kentou >= item.cost;
 
@@ -214,6 +219,7 @@ export function Shop({ onBack }: ShopProps) {
             <li>• 道具购买后在<b className="text-game-text">游戏中使用</b>（LiveStage 顶部道具栏）</li>
             <li>• 一次性效果在<b className="text-game-text">当前回合</b>生效后消耗</li>
             <li>• 延时沙漏为<b className="text-game-text">全局效果</b>，整关有效</li>
+            <li>• 场景许可购买后会<b className="text-game-text">永久解锁</b>对应场景</li>
             <li>• 肯头通过<b className="text-accent">通关加分</b>获得（超出门槛的绷不住值）</li>
             <li>• 更快通关、更少轮数 = <b className="text-accent-secondary">更多肯头！</b></li>
           </ul>
@@ -223,7 +229,7 @@ export function Shop({ onBack }: ShopProps) {
       {/* === 底栏 === */}
       <div className="shrink-0 border-t border-game-border px-4 py-2 flex items-center justify-between relative z-10 bg-game-surface/80">
         <span className="font-data text-[10px] text-game-text-dim tracking-wider">
-          MARKET // ITEMS: {items.length} // OWNED: {Object.values(inventory).reduce((a, b) => a + b, 0)} // EL-PSY-KONGROO
+          GUILD // ITEMS: {items.length} // OWNED: {Object.values(inventory).reduce((a, b) => a + b, 0) + items.filter((item) => item.sceneUnlock && unlockedScenes.includes(item.sceneUnlock)).length} // EL-PSY-KONGROO
         </span>
         <div className="flex items-center gap-1">
           <div className="w-1.5 h-1.5 bg-accent-tertiary rounded-full animate-pulse" />

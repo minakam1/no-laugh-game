@@ -156,7 +156,7 @@ sleep 1
 
 # ---- 5. 启动前端开发服务器 (端口 3000) ----
 echo -e "${CYAN}[启动] Vite 前端开发服务器 (端口 $FRONTEND_PORT)...${NC}"
-npx vite --port $FRONTEND_PORT --host &
+node node_modules/vite/bin/vite.js --host 0.0.0.0 --port $FRONTEND_PORT --strictPort &
 VITE_PID=$!
 
 echo ""

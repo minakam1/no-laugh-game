@@ -8,14 +8,13 @@ export const configStep: TutorialStepConfig = {
   target: 'config-quick-btns',
   waitForAction: true,  // 等用户确认配置后自动推进
   bubble: {
-    title: 'SIGNAL SETUP // 信号校准',
+    title: 'SIGNAL SETUP // 接入直播网络',
     lines: [
-      '📡 先接通 AI 信号源，AI 质检员才能上线。',
-      '点击上方按钮快速填入推荐配置。',
-      '「本地模型」无需 API Key，「深度求索」便宜好用。',
-      '填好后点击「测试信号」验证连通。',
+      '先接通AI信号源，否则观众和质检员无法上线。',
+      '选择填写模型信息，系统会把它伪装成直播质检席。',
+      '填好后点击「测试信号」；只要模型回应，猎场就开门。',
     ],
-    nextLabel: '了解，去配置',
+    nextLabel: '了解，去接入',
     showSkip: true,
   },
 };

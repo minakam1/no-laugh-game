@@ -6,6 +6,7 @@
 import { useEffect, useRef } from 'react';
 import { useGameStore, getPassThreshold } from '@/store/gameStore';
 import { getSoundManager } from '@/audio/SoundManager';
+import { getAudioManager } from '@/audio/AudioManager';
 
 /**
  * 在组件中调用此 Hook，自动根据游戏状态变化播放音效
@@ -13,17 +14,37 @@ import { getSoundManager } from '@/audio/SoundManager';
  */
 export function useGameSfx() {
   const soundRef = useRef(getSoundManager());
+  const audioRef = useRef(getAudioManager());
   const prevPhaseRef = useRef(useGameStore.getState().phase);
   const prevMeterValueRef = useRef(useGameStore.getState().meter.value);
   const prevRoundsLenRef = useRef(useGameStore.getState().meter.rounds.length);
 
   useEffect(() => {
     const sound = soundRef.current;
+    const audio = audioRef.current;
 
     // 订阅 Zustand 状态变化
     const unsub = useGameStore.subscribe((state, prevState) => {
       const threshold = getPassThreshold(state.currentLevel, state.difficulty);
+      const climaxThreshold = threshold * 0.5;
       const nearThreshold = Math.round(threshold * 0.85);
+
+      // === 新关卡 / 新局：淡回常规 BGM ===
+      if (
+        state.phase === 'editing'
+        && state.currentRound === 1
+        && state.meter.value === 0
+        && (
+          prevState.meter.value > 0
+          || prevState.currentRound !== 1
+          || prevState.phase === 'result'
+          || prevState.currentLevel !== state.currentLevel
+          || prevState.mode !== state.mode
+          || prevState.difficulty !== state.difficulty
+        )
+      ) {
+        void audio.transitionToMainBgm();
+      }
 
       // === 阶段变化音效 ===
       if (state.phase !== prevState.phase) {
@@ -63,6 +84,11 @@ export function useGameSfx() {
         // 接近过关阈值
         if (state.meter.value >= nearThreshold && prevState.meter.value < nearThreshold) {
           sound.play('meter_near_pass');
+        }
+
+        // 游戏高潮：达到当前通关线 50% 后切入宣传片式合成 BGM
+        if (state.meter.value >= climaxThreshold && prevState.meter.value < climaxThreshold) {
+          void audio.transitionToClimaxBgm();
         }
 
         // 达标

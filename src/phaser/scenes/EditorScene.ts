@@ -249,6 +249,7 @@ export class EditorScene extends Phaser.Scene {
         const tenth = Math.floor((totalSec % 1) * 10);
         this.performTimerText.setText(`开播 ${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}.${tenth}`);
       }
+      this.applySceneEffects(true);
       return;
     }
 
@@ -276,7 +277,7 @@ export class EditorScene extends Phaser.Scene {
     }
 
     // 场景设定效果（编辑模式）
-    this.applySceneEffects();
+    this.applySceneEffects(false);
   }
 
   private placeProp(key: PropKey, x: number, y: number): boolean {
@@ -725,10 +726,10 @@ export class EditorScene extends Phaser.Scene {
   }
 
   /** 每帧应用当前场景效果 */
-  private applySceneEffects(): void {
+  private applySceneEffects(performOnly: boolean): void {
     switch (this.currentSceneType) {
       case 'cliff':
-        this.applyCliffEffect();
+        this.applyCliffEffect(performOnly);
         break;
       case 'rapids':
         this.applyRapidsEffect();
@@ -1262,11 +1263,6 @@ export class EditorScene extends Phaser.Scene {
         cliffPlatformY:
           this.currentSceneType === 'cliff'
             ? this.CANVAS_TOP + (this.CANVAS_BOTTOM - this.CANVAS_TOP) * 0.62
-            : undefined,
-        // 悬崖掉落：在所有道具效果+物理积分完成后强制检查，优先级最高
-        onPostTick:
-          this.currentSceneType === 'cliff' && this.gravityEnabled
-            ? () => this.applyCliffEffect(true)
             : undefined,
       };
 

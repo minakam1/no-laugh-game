@@ -9,11 +9,11 @@ export const gameTourSubSteps: TutorialStepConfig[] = [
   {
     target: 'game-prop-panel',
     bubble: {
-      title: '1/4 EQUIPMENT // 道具区',
+      title: '1/4 EQUIPMENT // 道具仓',
       lines: [
-        '🔧 左边是道具仓库，拖拽到画布上即可部署。',
-        '不同道具组合让 AI 质检员绷不住值涨得不一样。',
-        '主角是免费道具，建议每回合都用上。',
+        '左侧是机关道具仓，所有事故都从这里申请。',
+        '拖拽道具到舞台，制造滑倒、弹飞、爆炸、传送等异常因果。',
+        '主角是免费诱饵，建议每轮出镜。',
       ],
       nextLabel: '继续',
       showSkip: true,
@@ -22,11 +22,10 @@ export const gameTourSubSteps: TutorialStepConfig[] = [
   {
     target: 'game-canvas',
     bubble: {
-      title: '2/4 STAGE // 直播舞台',
+      title: '2/4 STAGE // 诱笑舞台',
       lines: [
-        '🎬 中间是直播舞台，搭建的场景在这里表演。',
-        '主角会滑倒、被弹飞、被炸……够好笑，AI 质检员就绷不住。',
-        '拖拽道具到任意位置搭建场景。',
+        '中间是直播舞台，也是 AI 漏洞检测区。',
+        '不要解释笑点，只布置事实；让 AI 自己在观看中露出破绽。',
       ],
       nextLabel: '继续',
       showSkip: true,
@@ -35,11 +34,11 @@ export const gameTourSubSteps: TutorialStepConfig[] = [
   {
     target: 'game-danmaku',
     bubble: {
-      title: '3/4 DANMAKU // 弹幕监控',
+      title: '3/4 DANMAKU // 反应监听',
       lines: [
-        '💬 右边弹幕区：AI 观众实时发言、吐槽、破防。',
-        '表演结束后质检员给出评分和评语。',
-        '评分越高 = AI 质检员笑得越厉害。',
+        '右侧记录 AI 观众与质检员的即时反应。',
+        '吐槽、迟疑、破防，都可能是情感漏洞的外泄。',
+        '表演结束后，质检员会给出评分和报告。',
       ],
       nextLabel: '继续',
       showSkip: true,
@@ -50,11 +49,11 @@ export const gameTourSubSteps: TutorialStepConfig[] = [
     bubble: {
       title: '4/4 METER // 绷不住值',
       lines: [
-        '📊 顶部绷不住值（得分进度）。',
-        '每次表演后根据评分上涨。',
-        '达到通关线（/后面的数字）= 通关！',
+        '顶部是目标的绷不住值。',
+        '每轮评分都会转化为上涨幅度；重复套路会逐渐失效。',
+        '达到通关线，就能确认目标存在笑反应。',
       ],
-      nextLabel: '开始第一次挑战',
+      nextLabel: '开始第一次检测',
       showSkip: true,
     },
   },

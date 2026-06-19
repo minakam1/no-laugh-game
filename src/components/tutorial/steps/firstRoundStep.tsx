@@ -11,9 +11,9 @@ export const firstRoundSubSteps: TutorialStepConfig[] = [
     bubble: {
       title: '1/3 TRAP // 部署陷阱',
       lines: [
-        '🍌 在左边道具栏找到「香蕉皮」（3头肯），拖到舞台中央。',
-        '再拖一个「主角」（免费）到香蕉皮附近。',
-        '主角踩到香蕉皮滑倒——最经典的滑稽场景！',
+        '找到「香蕉皮」，花3头肯部署到舞台中央。',
+        '再把「主角」放到附近。',
+        '经典陷阱虽然古老，但 AI 最容易轻视古老本能。',
       ],
       nextLabel: '放好了',
       showSkip: true,
@@ -25,9 +25,9 @@ export const firstRoundSubSteps: TutorialStepConfig[] = [
     bubble: {
       title: '2/3 ACTION // 开始表演',
       lines: [
-        '▶️ 道具放好了？点击画布底部的「开始表演」按钮。',
-        '主角踩上香蕉皮——哧溜——滑倒了！',
-        'AI 质检员们要开始面对这个场景了……',
+        '点击画布底部的「开始表演」，直播切入正式检测。',
+        '主角踩上香蕉皮，失控、滑倒。',
+        '现在，把画面交给质检员。',
       ],
       nextLabel: '表演中……',
       showSkip: true,
@@ -39,9 +39,9 @@ export const firstRoundSubSteps: TutorialStepConfig[] = [
     bubble: {
       title: '3/3 REACTION // 观察反应',
       lines: [
-        '👀 AI 质检员正在反应——弹幕会刷出实时感受。',
-        '质检员会给出评分，分越高 = 笑得越厉害。',
-        '分数转化为绷不住值，顶部的绷不住值会上涨。',
+        '盯紧右侧反应流。',
+        '如果 AI 开始解释自己为什么没笑，通常说明它已经危险。',
+        '评分会写入顶部绷不住值。',
       ],
       nextLabel: '查看评分',
       showSkip: true,

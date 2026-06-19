@@ -2,7 +2,7 @@
 // ResultModal — 通关/失败结算弹窗（赛博朋克直播结算面板）
 // ============================================================
 
-import { useMemo, useEffect, useRef } from 'react';
+import { useMemo, useEffect, useRef, useState } from 'react';
 import { useGameStore, DIFFICULTY_CONFIG, getPassThreshold } from '@/store/gameStore';
 import { HoverTranslate } from './HoverTranslate';
 import { getSoundManager } from '@/audio/SoundManager';
@@ -33,6 +33,7 @@ function ResultModalInner({ onBackToMenu, onGoShop }: ResultModalProps) {
   const setMode = useGameStore((s) => s.setMode);
   const calcBonusPoints = useGameStore((s) => s.calcBonusPoints);
   const addKentou = useGameStore((s) => s.addKentou);
+  const [showBonusDetails, setShowBonusDetails] = useState(false);
 
   const threshold = getPassThreshold(currentLevel, difficulty);
   const totalValue = Math.round(meter.value);
@@ -210,47 +211,64 @@ function ResultModalInner({ onBackToMenu, onGoShop }: ResultModalProps) {
           )}
         </div>
 
-        {/* 加分奖励明细（通关时显示） */}
+        {/* 加分奖励（通关时显示） */}
         {bonus && bonus.passed && (
-          <div className="mb-6 p-4 border border-accent/40 bg-accent/5 animate-fade-in relative overflow-hidden">
-            <div className="panel-pattern" aria-hidden="true" />
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-base">🏆</span>
-              <span className="font-cyber text-xs text-accent tracking-wider">BONUS SCORE</span>
-            </div>
-            <div className="space-y-2 text-xs font-data">
-              <div className="flex justify-between">
-                <span className="text-game-text-dim">基础分 (BREAKDOWN)</span>
-                <span className="text-game-text">{bonus.baseScore}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-game-text-dim">轮数奖励 ({bonus.usedRounds}/10轮)</span>
-                <span className="text-success">+{bonus.roundBonus}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-game-text-dim">时间奖励 ({bonus.usedSeconds}秒)</span>
-                <span className="text-success">+{bonus.timeBonus}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-game-text-dim">通关基础奖励</span>
-                <span className="text-success">+{bonus.clearBonus} 💰</span>
-              </div>
-              <div className="border-t border-accent/20 pt-2 mt-1 flex justify-between">
-                <span className="text-game-text font-bold">总分</span>
-                <span className="text-accent font-bold text-sm">{bonus.totalBonus}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-game-text-dim">超出30分部分 ×2</span>
-                <span className="text-accent-secondary font-bold">
-                  +{bonus.kentouEarned} 💰
+          <div className="mb-6 animate-fade-in">
+            <div className="flex items-center justify-between py-2 border-b border-game-border/30">
+              <button
+                type="button"
+                onClick={() => {
+                  sound.play('ui_button_press');
+                  setShowBonusDetails((value) => !value);
+                }}
+                onMouseEnter={() => sound.play('ui_button_hover')}
+                className="group flex items-center gap-2 text-left"
+                aria-expanded={showBonusDetails}
+              >
+                <span className={`font-data text-sm text-game-text-dim transition-transform ${
+                  showBonusDetails ? 'rotate-90 text-accent' : ''
+                }`}>
+                  ▶
                 </span>
-              </div>
-            </div>
-            <div className="mt-3 pt-3 border-t border-accent/20 text-center">
-              <span className="font-cyber text-[10px] text-accent tracking-wider">
-                💰 获得 {bonus.kentouEarned} 头肯！前往商店消费吧
+                <span className="text-base" aria-hidden="true">🏆</span>
+                <span className="font-data text-sm text-game-text-dim group-hover:text-accent transition-colors">
+                  BONUS SCORE
+                </span>
+              </button>
+              <span className="font-data text-lg text-accent-secondary font-bold">
+                +{bonus.kentouEarned} 💰
               </span>
             </div>
+            {showBonusDetails && (
+              <div className="mt-3 space-y-2 border border-accent/30 bg-accent/5 p-3 text-xs font-data">
+                <div className="flex justify-between">
+                  <span className="text-game-text-dim">基础分 (BREAKDOWN)</span>
+                  <span className="text-game-text">{bonus.baseScore}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-game-text-dim">轮数奖励 ({bonus.usedRounds}/10轮)</span>
+                  <span className="text-success">+{bonus.roundBonus}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-game-text-dim">时间奖励 ({bonus.usedSeconds}秒)</span>
+                  <span className="text-success">+{bonus.timeBonus}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-game-text-dim">通关基础奖励</span>
+                  <span className="text-success">+{bonus.clearBonus} 💰</span>
+                </div>
+                <div className="border-t border-accent/20 pt-2 mt-1 flex justify-between">
+                  <span className="text-game-text font-bold">总分</span>
+                  <span className="text-accent font-bold text-sm">{bonus.totalBonus}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-game-text-dim">超出通关线奖励</span>
+                  <span className="text-accent-secondary font-bold">
+                    +{bonus.kentouEarned} 💰
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

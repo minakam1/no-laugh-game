@@ -44,11 +44,12 @@ interface AchievementActions {
   loadFromSave: (ids: AchievementId[]) => void;
   /** 导出可存档的成就列表 */
   getSaveData: () => AchievementId[];
+  /** 开发者：重置成就与跨回合追踪 */
+  resetAchievements: () => void;
 }
 
-export const useAchievementStore = create<AchievementState & AchievementActions>((set, get) => ({
-  unlocked: new Set(),
-  track: {
+function createInitialTrack(): AchievementState['track'] {
+  return {
     usedPropTypes: new Set(),
     totalKentouEarned: 0,
     totalAiDanmaku: 0,
@@ -59,7 +60,12 @@ export const useAchievementStore = create<AchievementState & AchievementActions>
     explosiveOnlyLevel: true,
     levelTotalRounds: 0,
     usedScenes: new Set(),
-  },
+  };
+}
+
+export const useAchievementStore = create<AchievementState & AchievementActions>((set, get) => ({
+  unlocked: new Set(),
+  track: createInitialTrack(),
 
   unlock: (id) => {
     const { unlocked } = get();
@@ -156,4 +162,6 @@ export const useAchievementStore = create<AchievementState & AchievementActions>
   loadFromSave: (ids) => set({ unlocked: new Set(ids) }),
 
   getSaveData: () => Array.from(get().unlocked),
+
+  resetAchievements: () => set({ unlocked: new Set(), track: createInitialTrack() }),
 }));

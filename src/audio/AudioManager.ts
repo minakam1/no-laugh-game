@@ -3,7 +3,7 @@
 // 复用单例 AudioContext，BgmGenerator 改为内部组件
 // ============================================================
 
-import { BgmGenerator } from '@/utils/bgmGenerator';
+import { BgmGenerator, type BgmVariant } from '@/utils/bgmGenerator';
 
 /** 所有音效事件的类型标识 */
 export type SfxEvent =
@@ -117,8 +117,11 @@ class AudioManager {
   private ctx: AudioContext | null = null;
   private masterGain: GainNode | null = null;
   private bgm: BgmGenerator | null = null;
+  private climaxBgm: BgmGenerator | null = null;
   private sfxGain: GainNode | null = null;
   private bgmGain: GainNode | null = null;
+  private mainBgmGain: GainNode | null = null;
+  private climaxBgmGain: GainNode | null = null;
   private ambientGain: GainNode | null = null;
 
   private bgmVolume = 0.5;
@@ -126,6 +129,8 @@ class AudioManager {
   private ambientVolume = 0.15;
   private bgmPlaying = false;
   private bgmStarting = false;  // 防止并发 bgmStart()
+  private activeBgmVariant: BgmVariant = 'main';
+  private bgmFadeStopTimerId: ReturnType<typeof setTimeout> | null = null;
 
   // 环境氛围定时器
   private ambientTimerId: ReturnType<typeof setInterval> | null = null;
@@ -149,6 +154,14 @@ class AudioManager {
     this.bgmGain.gain.value = this.bgmVolume;
     this.bgmGain.connect(this.masterGain);
 
+    this.mainBgmGain = this.ctx.createGain();
+    this.mainBgmGain.gain.value = this.activeBgmVariant === 'main' ? 1 : 0;
+    this.mainBgmGain.connect(this.bgmGain);
+
+    this.climaxBgmGain = this.ctx.createGain();
+    this.climaxBgmGain.gain.value = this.activeBgmVariant === 'climax' ? 1 : 0;
+    this.climaxBgmGain.connect(this.bgmGain);
+
     // 音效通道
     this.sfxGain = this.ctx.createGain();
     this.sfxGain.gain.value = this.sfxVolume;
@@ -164,28 +177,92 @@ class AudioManager {
 
   // ============ BGM 控制 ============
 
-  getBgmGenerator(): BgmGenerator {
+  getBgmGenerator(variant: BgmVariant = 'main'): BgmGenerator {
+    if (variant === 'climax') {
+      if (!this.climaxBgm) {
+        this.climaxBgm = new BgmGenerator('climax');
+      }
+      return this.climaxBgm;
+    }
     if (!this.bgm) {
-      this.bgm = new BgmGenerator();
+      this.bgm = new BgmGenerator('main');
     }
     return this.bgm;
+  }
+
+  private getExistingBgmGenerator(variant: BgmVariant): BgmGenerator | null {
+    return variant === 'climax' ? this.climaxBgm : this.bgm;
+  }
+
+  private getBgmVariantGain(variant: BgmVariant): GainNode {
+    const gain = variant === 'climax' ? this.climaxBgmGain : this.mainBgmGain;
+    if (!gain) {
+      throw new Error(`BGM gain is not initialized: ${variant}`);
+    }
+    return gain;
+  }
+
+  private async ensureBgmVariant(variant: BgmVariant): Promise<void> {
+    const ctx = await this.init();
+    if (ctx.state === 'suspended') {
+      await ctx.resume();
+    }
+    const bgm = this.getBgmGenerator(variant);
+    bgm.setOutput(ctx, this.getBgmVariantGain(variant));
+    await bgm.start();
+    bgm.setVolume(1);
+  }
+
+  private setVariantMix(variant: BgmVariant): void {
+    if (this.mainBgmGain) {
+      this.mainBgmGain.gain.value = variant === 'main' ? 1 : 0;
+    }
+    if (this.climaxBgmGain) {
+      this.climaxBgmGain.gain.value = variant === 'climax' ? 1 : 0;
+    }
+  }
+
+  private rampGain(gain: GainNode, target: number, fadeMs: number): void {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const fadeSeconds = Math.max(0.01, fadeMs / 1000);
+    gain.gain.cancelScheduledValues(now);
+    gain.gain.setValueAtTime(gain.gain.value, now);
+    gain.gain.linearRampToValueAtTime(target, now + fadeSeconds);
+  }
+
+  private async transitionBgm(variant: BgmVariant, fadeMs: number): Promise<void> {
+    if (this.activeBgmVariant === variant) return;
+    this.activeBgmVariant = variant;
+
+    if (!this.bgmPlaying) {
+      this.setVariantMix(variant);
+      return;
+    }
+
+    if (this.bgmFadeStopTimerId) {
+      clearTimeout(this.bgmFadeStopTimerId);
+      this.bgmFadeStopTimerId = null;
+    }
+
+    const previousVariant: BgmVariant = variant === 'main' ? 'climax' : 'main';
+    await this.ensureBgmVariant(variant);
+    this.rampGain(this.getBgmVariantGain(variant), 1, fadeMs);
+    this.rampGain(this.getBgmVariantGain(previousVariant), 0, fadeMs);
+
+    this.bgmFadeStopTimerId = setTimeout(() => {
+      this.getExistingBgmGenerator(previousVariant)?.stop();
+      this.bgmFadeStopTimerId = null;
+    }, fadeMs + 120);
   }
 
   async bgmStart(): Promise<void> {
     if (this.bgmPlaying || this.bgmStarting) return;
     this.bgmStarting = true;
     try {
-      const ctx = await this.init();
-      if (ctx.state === 'suspended') {
-        await ctx.resume();
-      }
-      const bgm = this.getBgmGenerator();
-      // 让 BgmGenerator 使用我们的 AudioContext，输出到 bgmGain
-      bgm.setOutput(ctx, this.bgmGain!);
-      await bgm.start();
+      await this.ensureBgmVariant(this.activeBgmVariant);
       this.bgmPlaying = true;
-      // BgmGenerator 内部音量全开，由 bgmGain 控制最终输出
-      bgm.setVolume(1);
+      this.setVariantMix(this.activeBgmVariant);
       if (this.bgmGain) {
         this.bgmGain.gain.value = this.bgmVolume;
       }
@@ -198,7 +275,16 @@ class AudioManager {
     if (this.bgm) {
       this.bgm.stop();
     }
+    if (this.climaxBgm) {
+      this.climaxBgm.stop();
+    }
+    if (this.bgmFadeStopTimerId) {
+      clearTimeout(this.bgmFadeStopTimerId);
+      this.bgmFadeStopTimerId = null;
+    }
     this.bgmPlaying = false;
+    this.activeBgmVariant = 'main';
+    this.setVariantMix('main');
   }
 
   bgmToggle(): boolean {
@@ -215,6 +301,14 @@ class AudioManager {
     if (this.bgmGain) {
       this.bgmGain.gain.value = this.bgmVolume;
     }
+  }
+
+  transitionToClimaxBgm(fadeMs = 1800): Promise<void> {
+    return this.transitionBgm('climax', fadeMs);
+  }
+
+  transitionToMainBgm(fadeMs = 1400): Promise<void> {
+    return this.transitionBgm('main', fadeMs);
   }
 
   setSfxVolume(v: number): void {
@@ -378,7 +472,11 @@ class AudioManager {
       this.masterGain = null;
       this.sfxGain = null;
       this.bgmGain = null;
+      this.mainBgmGain = null;
+      this.climaxBgmGain = null;
       this.ambientGain = null;
+      this.bgm = null;
+      this.climaxBgm = null;
     }
   }
 }

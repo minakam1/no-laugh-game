@@ -7,14 +7,14 @@ import type { TutorialStepConfig } from '../TutorialOverlay';
 export const welcomeStep: TutorialStepConfig = {
   target: undefined,
   bubble: {
-    title: 'LIVE // AI笑TV',
+    title: 'MISSION BRIEF // AI笑TV',
     lines: [
-      '🎬 挑战者，欢迎来到 AI笑TV！',
-      '规则：搭建滑稽场景 → 表演给 AI 质检员看 → 逗笑它们就能得分。',
-      '绷不住值越高 = 笑得越厉害。通不过测试，将被淘汰。',
-      '10轮挑战，积累30分即可通关！',
+      '挑战者，编号已录入。AI笑TV 的直播信号即将接管全城。',
+      '你的任务是取悦观众，诱发 AI 的情感漏洞：笑。',
+      '搭建直播场景，质检员给出反应；绷不住值越高，嫌疑越大。',
+      '10轮内累计30点绷不住值，目标智能体就会被锁定。',
     ],
-    nextLabel: '开始挑战',
+    nextLabel: '接受任务',
     showSkip: true,
   },
 };

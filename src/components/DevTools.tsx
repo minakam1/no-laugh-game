@@ -3,7 +3,7 @@
 // ============================================================
 
 import { useState, useCallback } from 'react';
-import { useGameStore } from '@/store/gameStore';
+import { clearStoredSave, useGameStore } from '@/store/gameStore';
 import { useAchievementStore } from '@/store/achievementStore';
 import { getSoundManager } from '@/audio/SoundManager';
 
@@ -21,9 +21,10 @@ const SCENES: SceneItem[] = [
 interface DevToolsProps {
   onReplayPrologue: () => void;
   onReplayTutorial: () => void;
+  onClearGameRecords: () => void;
 }
 
-export function DevTools({ onReplayPrologue, onReplayTutorial }: DevToolsProps) {
+export function DevTools({ onReplayPrologue, onReplayTutorial, onClearGameRecords }: DevToolsProps) {
   const [open, setOpen] = useState(false);
 
   const handleToggle = useCallback(() => {
@@ -39,7 +40,7 @@ export function DevTools({ onReplayPrologue, onReplayTutorial }: DevToolsProps) 
         const sound = getSoundManager();
         sound.play('ui_purchase');
         // 解锁全部5关
-        useGameStore.setState({ unlockedLevels: 5 });
+        useGameStore.setState({ unlockedLevels: 5, unlockedScenes: ['normal', 'cliff', 'rapids', 'darkness', 'windstorm'] });
         // 添加 10000 肯头
         useGameStore.getState().addKentou(10000);
         // 标记已击败第一关（解锁商店）
@@ -51,11 +52,24 @@ export function DevTools({ onReplayPrologue, onReplayTutorial }: DevToolsProps) 
     [onReplayPrologue, onReplayTutorial],
   );
 
+  const handleClearCache = useCallback(async () => {
+    const confirmed = window.confirm('确定清理游戏记录？关卡进度、分数、肯头、商店库存和成就会恢复初始状态。API 配置会保留。');
+    if (!confirmed) return;
+
+    const sound = getSoundManager();
+    sound.play('ui_button_press');
+    await clearStoredSave();
+    useGameStore.getState().resetGameRecords();
+    useAchievementStore.getState().resetAchievements();
+    onClearGameRecords();
+    setOpen(false);
+  }, [onClearGameRecords]);
+
   return (
     <>
       {/* 按钮 */}
       <button
-        className="fixed bottom-2 left-1/2 -translate-x-1/2 z-[400] px-3 py-1
+        className="fixed bottom-2 left-2 z-[400] px-3 py-1
                    bg-black/50 border border-game-border/30 text-game-text-dim/40
                    font-cyber text-[10px] tracking-widest
                    hover:border-accent-secondary/50 hover:text-accent-secondary/60
@@ -69,7 +83,7 @@ export function DevTools({ onReplayPrologue, onReplayTutorial }: DevToolsProps) 
       {/* 菜单面板 */}
       {open && (
         <div
-          className="fixed inset-0 z-[399] flex items-end justify-center pb-12"
+          className="fixed inset-0 z-[399] flex items-end justify-start pb-12 pl-2 pr-2"
           onClick={() => setOpen(false)}
         >
           <div
@@ -96,6 +110,15 @@ export function DevTools({ onReplayPrologue, onReplayTutorial }: DevToolsProps) 
                   {scene.id === 'unlock' ? scene.label : `▸ ${scene.label}`}
                 </button>
               ))}
+              <button
+                className="w-full text-left px-3 py-2 mt-2 border border-danger/40
+                           bg-danger/10 text-danger text-sm font-data
+                           hover:border-danger hover:text-game-text
+                           transition-all"
+                onClick={handleClearCache}
+              >
+                ▸ 清理缓存（游戏记录）
+              </button>
             </div>
             <p className="text-game-text-dim/30 font-data text-[9px] mt-3 text-center">
               点击外部关闭

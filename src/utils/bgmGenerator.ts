@@ -3,6 +3,8 @@
 // 生成 3 分钟可无缝循环的电子音乐
 // ============================================================
 
+export type BgmVariant = 'main' | 'climax';
+
 export class BgmGenerator {
   private ctx: AudioContext | null = null;
   private masterGain: GainNode | null = null;
@@ -11,6 +13,8 @@ export class BgmGenerator {
   private timerId: ReturnType<typeof setInterval> | null = null;
   private externalCtx: AudioContext | null = null;
   private externalDest: AudioNode | null = null;
+
+  constructor(private readonly variant: BgmVariant = 'main') {}
 
   // BPM
   private readonly bpm = 110;
@@ -27,6 +31,13 @@ export class BgmGenerator {
     415.30, // Ab4
     466.16, // Bb4
     523.25, // C5
+    587.33, // D5
+    622.25, // Eb5
+    698.46, // F5
+    783.99, // G5
+    830.61, // Ab5
+    932.33, // Bb5
+    1046.50, // C6
   ];
 
   // 低音音阶
@@ -143,7 +154,14 @@ export class BgmGenerator {
     { idx: 6, dur: 0.5 },
   ];
 
-  private scheduleBass(startTime: number, lengthInBeats: number): void {
+  private leadMelody = [
+    4, 4, 7, 4, 2, 0, 2, 4, 4, 7, 9, 7, 4, 2, 0, -1,
+    2, 4, 2, 0, -1, 0, 2, 4, 7, 9, 7, 4, 2, 4, 7, 4,
+    4, 4, 7, 9, 7, 4, 2, 0, 4, 7, 9, 11, 9, 7, 4, 2,
+    0, 2, 4, 2, 0, -1, 0, 2, 4, 7, 9, 7, 4, 2, 0, -1,
+  ];
+
+  private scheduleBass(startTime: number, lengthInBeats: number, intensity = 1): void {
     const bd = this.beatDuration;
     let t = startTime;
     let pi = 0;
@@ -151,7 +169,15 @@ export class BgmGenerator {
       const p = this.bassPattern[pi % this.bassPattern.length];
       const freq = this.bassScale[p.idx];
       const dur = p.dur * bd;
-      this.playNote(freq, t, dur * 0.85, 'sawtooth', 0.18, 300 + Math.random() * 100);
+      this.playNote(
+        freq,
+        t,
+        dur * 0.85,
+        'sawtooth',
+        0.18 * intensity,
+        300 + Math.random() * 100 + (intensity - 1) * 180,
+        intensity > 1 ? 6 : 0,
+      );
       t += dur;
       pi++;
     }
@@ -165,7 +191,7 @@ export class BgmGenerator {
     [0, 3, 5, 7, 5, 3],       // 带跳跃
   ];
 
-  private scheduleArpeggio(startTime: number, lengthInBeats: number): void {
+  private scheduleArpeggio(startTime: number, lengthInBeats: number, intensity = 1): void {
     const bd = this.beatDuration;
     const step = bd / 4; // 16分音符
     let t = startTime;
@@ -176,7 +202,7 @@ export class BgmGenerator {
       for (let i = 0; i < pattern.length; i++) {
         const freq = this.scale[pattern[i]] * 2; // 高八度
         const dur = step * 0.7;
-        const vol = 0.04 + (i / pattern.length) * 0.03;
+        const vol = (0.04 + (i / pattern.length) * 0.03) * intensity;
         this.playNote(freq, t, dur, 'square', vol, 1500 + i * 200, -5);
         t += step;
       }
@@ -335,14 +361,121 @@ export class BgmGenerator {
     }
   }
 
+  // ---- 高潮 Lead 旋律 ----
+  private scheduleLead(startTime: number, lengthInBeats: number): void {
+    const bd = this.beatDuration;
+    const step = bd / 2; // 8分音符
+    const endTime = startTime + lengthInBeats * bd;
+    let t = startTime;
+    let mi = 0;
+
+    while (t < endTime) {
+      const noteIdx = this.leadMelody[mi % this.leadMelody.length];
+      mi++;
+      if (noteIdx >= 0) {
+        const freq = this.scale[noteIdx];
+        const dur = step * 0.85;
+        this.playDetunedLead(freq, t, dur);
+      }
+      t += step;
+    }
+  }
+
+  private playDetunedLead(freq: number, startTime: number, duration: number): void {
+    const ctx = this.ctx!;
+    const oscA = ctx.createOscillator();
+    const oscB = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+
+    oscA.type = 'sawtooth';
+    oscB.type = 'sawtooth';
+    oscA.frequency.value = freq;
+    oscB.frequency.value = freq * 1.01;
+    oscB.detune.value = -10;
+
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(1400, startTime);
+    filter.frequency.linearRampToValueAtTime(650, startTime + duration * 0.65);
+
+    gain.gain.setValueAtTime(0, startTime);
+    gain.gain.linearRampToValueAtTime(0.11, startTime + 0.03);
+    gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+    oscA.connect(filter);
+    oscB.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.masterGain!);
+    oscA.start(startTime);
+    oscB.start(startTime);
+    oscA.stop(startTime + duration + 0.05);
+    oscB.stop(startTime + duration + 0.05);
+  }
+
+  // ---- 高潮转场 FX ----
+  private scheduleRiser(startTime: number, duration: number): void {
+    const ctx = this.ctx!;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(200, startTime);
+    osc.frequency.exponentialRampToValueAtTime(4000, startTime + duration);
+
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(400, startTime);
+    filter.frequency.exponentialRampToValueAtTime(6000, startTime + duration);
+    filter.Q.value = 3;
+
+    gain.gain.setValueAtTime(0, startTime);
+    gain.gain.linearRampToValueAtTime(0.08, startTime + duration * 0.7);
+    gain.gain.linearRampToValueAtTime(0, startTime + duration);
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.masterGain!);
+    osc.start(startTime);
+    osc.stop(startTime + duration + 0.05);
+  }
+
+  private scheduleImpact(startTime: number): void {
+    const ctx = this.ctx!;
+    const bufferSize = Math.floor(ctx.sampleRate * 0.3);
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.08));
+    }
+
+    const source = ctx.createBufferSource();
+    const filter = ctx.createBiquadFilter();
+    const gain = ctx.createGain();
+
+    source.buffer = buffer;
+    filter.type = 'lowpass';
+    filter.frequency.value = 1200;
+    gain.gain.setValueAtTime(0.28, startTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.3);
+
+    source.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.masterGain!);
+    source.start(startTime);
+  }
+
   // ---- 主调度 ----
   private scheduleChunk(startTime: number, durationBeats: number): void {
     this.schedulePad(startTime, durationBeats);
-    this.scheduleBass(startTime, durationBeats);
-    this.scheduleArpeggio(startTime, durationBeats);
+    this.scheduleBass(startTime, durationBeats, this.variant === 'climax' ? 1.2 : 1);
+    this.scheduleArpeggio(startTime, durationBeats, this.variant === 'climax' ? 1.2 : 1);
     this.scheduleKick(startTime, durationBeats);
     this.scheduleHihat(startTime, durationBeats);
     this.scheduleSnare(startTime, durationBeats);
+    if (this.variant === 'climax') {
+      this.scheduleLead(startTime, durationBeats);
+    }
   }
 
   // ---- 播放控制 ----
@@ -365,6 +498,10 @@ export class BgmGenerator {
 
       // 初始调度
       const now = this.ctx!.currentTime;
+      if (this.variant === 'climax') {
+        this.scheduleImpact(now);
+        this.scheduleRiser(now, this.barDuration);
+      }
       this.scheduleChunk(now, chunkBeats);
 
       // 清掉可能残留的旧定时器（多重点击场景）

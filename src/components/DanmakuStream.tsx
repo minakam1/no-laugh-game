@@ -5,7 +5,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { getSoundManager } from '@/audio/SoundManager';
-import type { BossOpeningLine } from '@/data/bossOpeningLines';
+import type { AudienceOpeningLine } from '@/data/bossOpeningLines';
 
 export interface DanmakuItem {
   text: string;
@@ -17,8 +17,8 @@ export interface DanmakuItem {
   _index?: number;
   /** 头肯奖励（Super Chat 收入） */
   pointsReward?: number;
-  /** Boss 开场白专属数据 */
-  bossOpening?: BossOpeningLine;
+  /** 关卡开场普通观众 SuperChat */
+  audienceOpening?: AudienceOpeningLine;
   /** 发送者用户名（用户弹幕固定 'Player'） */
   senderName?: string;
   /** 是否为攻击性弹幕（删掉可触发成就） */
@@ -156,7 +156,7 @@ export function DanmakuStream({ list, onRemove, onSendQuick }: DanmakuStreamProp
           </div>
         )}
         {list.map((item, i) => {
-          const viewerName = getViewerName(item.round + i);
+          const viewerName = item.senderName || getViewerName(item.round + i);
           const avatarColor = getAvatarColor(item.round + i);
 
           // 预设弹幕：淡化、无头像、无分数
@@ -186,9 +186,9 @@ export function DanmakuStream({ list, onRemove, onSendQuick }: DanmakuStreamProp
             );
           }
 
-          // Boss 开场白：精简卡片，质检员用户名固定
-          if (item.bossOpening) {
-            const bo = item.bossOpening;
+          // 关卡开场：普通观众低额 SuperChat，不做置顶 Boss 感
+          if (item.audienceOpening) {
+            const opening = item.audienceOpening;
             return (
               <div
                 key={getDanmakuKey(item)}
@@ -196,39 +196,37 @@ export function DanmakuStream({ list, onRemove, onSendQuick }: DanmakuStreamProp
                 onDoubleClick={() => handleDoubleClick(i)}
                 title="双击移除"
               >
-                <div className="relative rounded-md overflow-hidden animate-super-chat-enter animate-boss-glow">
-                  <div className="absolute inset-0 bg-gradient-to-r from-rose-600/15 via-purple-500/10 to-rose-600/15 rounded-md" />
-                  <div className="absolute inset-0 rounded-md border border-rose-500/35" />
+                <div className="relative rounded-md overflow-hidden animate-super-chat-enter border border-game-border/70 bg-game-bg/75">
+                  <div className="absolute inset-0 bg-gradient-to-r from-accent/10 via-transparent to-accent-secondary/10 rounded-md" />
 
                   <div className="relative px-3 py-2.5">
                     {/* 顶栏 */}
                     <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-2">
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-rose-600/20 border border-rose-500/30 rounded-sm">
-                          <span className="text-[9px]">👑</span>
-                          <span className="font-cyber text-[8px] text-rose-300 tracking-widest">SUPER CHAT</span>
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-accent/10 border border-accent/25 rounded-sm">
+                          <span className="text-[8px] text-accent">◆</span>
+                          <span className="font-cyber text-[8px] text-accent tracking-widest">SUPER CHAT</span>
                         </span>
-                        <span className="font-data text-[9px] text-rose-400/70 tracking-wider">
-                          ¥{bo.amount.toLocaleString()}
+                        <span className="font-data text-[9px] text-accent/70 tracking-wider">
+                          ¥{opening.amount.toLocaleString()}
                         </span>
                       </div>
-                      <span className="font-cyber text-[8px] text-purple-300/50 tracking-wider">📌 PINNED</span>
                     </div>
 
                     {/* 用户名行 */}
                     <div className="flex items-center gap-2 mb-1">
-                      <div className="w-6 h-6 bg-gradient-to-br from-rose-700 to-purple-800 rounded-sm flex items-center justify-center shrink-0">
-                        <span className="font-cyber text-[10px] text-rose-100 font-bold">
-                          {bo.judgeName.charAt(0)}
+                      <div className="w-6 h-6 bg-accent/20 border border-accent/30 rounded-sm flex items-center justify-center shrink-0">
+                        <span className="font-cyber text-[10px] text-accent font-bold">
+                          {opening.viewerName.charAt(0)}
                         </span>
                       </div>
-                      <span className="font-data text-[12px] text-rose-200 font-bold">
-                        {bo.judgeName}
+                      <span className="font-data text-[12px] text-accent/90 font-bold">
+                        {opening.viewerName}
                       </span>
                     </div>
 
                     {/* 正文 */}
-                    <p className="text-[14px] text-rose-100 leading-relaxed break-words font-data font-medium">
+                    <p className="text-[14px] text-game-text leading-relaxed break-words font-data">
                       {item.text}
                     </p>
                   </div>

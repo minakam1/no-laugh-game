@@ -39,6 +39,7 @@ export default function App() {
     toggle: toggleBgm,
     setVolume: setBgmVolume,
     playSfx,
+    audioManager,
   } = useBgm(true);
 
   // 游戏状态音效自动触发
@@ -97,6 +98,7 @@ export default function App() {
   const handleStart = useCallback(
     (mode: 'story' | 'endless', level?: number, difficulty?: 'normal' | 'hard') => {
       playSfx('game_start');
+      void audioManager.transitionToMainBgm();
       setMode(mode, level, difficulty);
       markGameStart();
       startRound();
@@ -106,37 +108,41 @@ export default function App() {
         setTutorialStep('game_tour');
       }
     },
-    [setMode, markGameStart, startRound, playSfx, tutorialStep, setTutorialStep],
+    [setMode, markGameStart, startRound, playSfx, audioManager, tutorialStep, setTutorialStep],
   );
 
   // 继续游戏
   const handleContinue = useCallback(() => {
     if (saveData) {
       playSfx('game_start');
+      void audioManager.transitionToMainBgm();
       loadSave(saveData);
       markGameStart();
       startRound();
       setAppPhase('playing');
     }
-  }, [saveData, loadSave, markGameStart, startRound, playSfx]);
+  }, [saveData, loadSave, markGameStart, startRound, playSfx, audioManager]);
 
   // 返回菜单
   const handleBackToMenu = useCallback(() => {
     playSfx('game_back_to_menu');
+    void audioManager.transitionToMainBgm();
     setAppPhase('menu');
-  }, [playSfx]);
+  }, [playSfx, audioManager]);
 
   // 去商店
   const handleGoShop = useCallback(() => {
     playSfx('ui_click');
+    void audioManager.transitionToMainBgm();
     setAppPhase('shop');
-  }, [playSfx]);
+  }, [playSfx, audioManager]);
 
   // 从商店返回
   const handleBackFromShop = useCallback(() => {
     playSfx('ui_click');
+    void audioManager.transitionToMainBgm();
     setAppPhase('menu');
-  }, [playSfx]);
+  }, [playSfx, audioManager]);
 
   // 开场剧情结束 → 进入配置/菜单，触发完整引导
   const handlePrologueComplete = useCallback(() => {
@@ -181,6 +187,13 @@ export default function App() {
   const handleReplayTutorial = useCallback(() => {
     setTutorialStep('welcome');
   }, [setTutorialStep]);
+
+  // 开发者：清理游戏记录后刷新入口态
+  const handleClearGameRecords = useCallback(() => {
+    setSaveData(null);
+    setTutorialStep(null);
+    setAppPhase(apiConfig ? 'menu' : 'config');
+  }, [apiConfig, setTutorialStep]);
 
   // BGM props 共用
   const bgmProps = {
@@ -299,6 +312,7 @@ export default function App() {
       <DevTools
         onReplayPrologue={handleReplayPrologue}
         onReplayTutorial={handleReplayTutorial}
+        onClearGameRecords={handleClearGameRecords}
       />
     </>
   );
