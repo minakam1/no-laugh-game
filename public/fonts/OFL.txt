@@ -1,0 +1,20 @@
+Font License Notice
+
+This project uses the following fonts under the SIL Open Font License (OFL) Version 1.1:
+
+1. Noto Sans SC
+   Copyright 2014-2021 Google Inc. All Rights Reserved.
+   Licensed under the SIL Open Font License, Version 1.1.
+   https://github.com/googlefonts/noto-cjk
+
+2. Orbitron
+   Copyright (c) 2009-2018, Matt McInerney, with Reserved Font Name Orbitron.
+   Licensed under the SIL Open Font License, Version 1.1.
+   https://github.com/theleagueof/orbitron
+
+3. Rajdhani
+   Copyright (c) 2011-2015, Indian Type Foundry. All Rights Reserved.
+   Licensed under the SIL Open Font License, Version 1.1.
+   https://github.com/itfoundry/rajdhani
+
+Full license text: https://openfontlicense.org/

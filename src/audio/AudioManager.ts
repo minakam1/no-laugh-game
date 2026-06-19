@@ -361,13 +361,22 @@ class AudioManager {
     const buffer = this.audioBufferCache.get(url);
     if (!buffer) return;
 
-    const source = this.ctx.createBufferSource();
-    source.buffer = buffer;
-    const gain = this.ctx.createGain();
-    gain.gain.value = 1;
-    source.connect(gain);
-    gain.connect(this.sfxGain);
-    source.start(this.ctx.currentTime + offset);
+    // 如果 AudioContext 被挂起，先恢复
+    if (this.ctx.state === 'suspended') {
+      this.ctx.resume().catch(() => {});
+    }
+
+    try {
+      const source = this.ctx.createBufferSource();
+      source.buffer = buffer;
+      const gain = this.ctx.createGain();
+      gain.gain.value = 1;
+      source.connect(gain);
+      gain.connect(this.sfxGain);
+      source.start(this.ctx.currentTime + offset);
+    } catch {
+      // AudioBuffer 可能属于已关闭的旧 Context，静默忽略
+    }
   }
 
   /** 检查音频文件是否已缓存 */
@@ -477,6 +486,8 @@ class AudioManager {
       this.ambientGain = null;
       this.bgm = null;
       this.climaxBgm = null;
+      // AudioContext 关闭后，所有关联的 AudioBuffer 失效，清空缓存
+      this.audioBufferCache.clear();
     }
   }
 }
@@ -1718,7 +1729,15 @@ const SFX_REGISTRY: Partial<Record<SfxEvent, SfxDef>> = {
 
       // 播放音频文件的辅助函数
       const playFile = (url: string, offset: number) => {
-        if (!audio.hasBuffer(url)) return;
+        if (!audio.hasBuffer(url)) {
+          // 缓存未命中时，尝试实时加载播放
+          audio.loadAudioFile(url).then(() => {
+            audio.playBuffer(url, offset);
+          }).catch(() => {
+            // 加载失败时用合成音效作为兜底
+          });
+          return;
+        }
         audio.playBuffer(url, offset);
       };
 

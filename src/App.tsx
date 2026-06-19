@@ -47,12 +47,7 @@ export default function App() {
 
   // 启动：检查已有配置和存档
   useEffect(() => {
-    const legacyKey = localStorage.getItem('apiKey') || '';
-    if (legacyKey) {
-      sessionStorage.setItem('apiKey', legacyKey);
-      localStorage.removeItem('apiKey');
-    }
-    const savedKey = sessionStorage.getItem('apiKey') || legacyKey;
+    const savedKey = sessionStorage.getItem('apiKey') || '';
     const savedUrl = localStorage.getItem('apiBaseUrl') || '';
     const savedModel = localStorage.getItem('apiModel') || '';
     const savedSupportsImages = localStorage.getItem('apiSupportsImages') === 'true';

@@ -238,6 +238,22 @@ body {
     );
     opacity: 1;
   }
+  /* 结算面板滚动条 — 赛博朋克风格 */
+  .cyber-panel::-webkit-scrollbar {
+    width: 6px;
+  }
+  .cyber-panel::-webkit-scrollbar-track {
+    background: var(--neo-ink);
+    border-radius: 3px;
+  }
+  .cyber-panel::-webkit-scrollbar-thumb {
+    background: var(--accent);
+    border-radius: 3px;
+    border: 1px solid var(--neo-ink);
+  }
+  .cyber-panel::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-secondary);
+  }
 
   /* 霓虹发光边框 */
   .cyber-glow-border {

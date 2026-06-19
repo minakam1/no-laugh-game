@@ -105,7 +105,7 @@ function ResultModalInner({ onBackToMenu, onGoShop }: ResultModalProps) {
       {/* 扫描线 */}
       <div className="absolute inset-0 scanlines pointer-events-none" />
 
-      <div className="cyber-panel cyber-corner max-w-md w-full mx-4 p-8 animate-slide-up relative z-10 overflow-hidden" data-tutorial="result-modal">
+      <div className="cyber-panel cyber-corner max-w-md w-full mx-4 p-8 animate-slide-up relative z-10 overflow-y-auto overflow-x-hidden" style={{ maxHeight: '90vh' }} data-tutorial="result-modal">
         <div className="panel-pattern" aria-hidden="true" />
         <div className="corner-brackets hidden sm:block" aria-hidden="true" />
         <div className={`status-icon absolute top-4 right-4 hidden sm:inline-flex ${
@@ -127,7 +127,7 @@ function ResultModalInner({ onBackToMenu, onGoShop }: ResultModalProps) {
         }`} />
 
         {/* 标题 */}
-        <div className="text-center mb-6 mt-2">
+        <div className="text-center mb-4 mt-2">
           <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center border border-accent/40 bg-accent/10 text-xl">
             {isEndless ? '◇' : passed ? '🏆' : '×'}
           </div>
@@ -157,7 +157,7 @@ function ResultModalInner({ onBackToMenu, onGoShop }: ResultModalProps) {
                 <div className="w-2 h-2 bg-accent-secondary rounded-full animate-pulse" />
               </div>
               <p className="font-cyber text-[11px] text-game-text mt-1 tracking-wider">
-                发现新质检员：「{DIFFICULTY_CONFIG[currentLevel + 1]?.name || '???'}」
+                发现新目标：「{DIFFICULTY_CONFIG[currentLevel + 1]?.name || '???'}」
               </p>
               <p className="font-data text-[10px] text-game-text-dim mt-0.5">
                 下一关已解锁，难度系数 ×{DIFFICULTY_CONFIG[currentLevel + 1]?.baselineCoefficient || '?'}
@@ -172,14 +172,14 @@ function ResultModalInner({ onBackToMenu, onGoShop }: ResultModalProps) {
         </div>
 
         {/* 数据展示 */}
-        <div className="space-y-3 mb-6">
-          <div className="flex items-center justify-between py-2 border-b border-game-border/30">
+        <div className="space-y-1 mb-4">
+          <div className="flex items-center justify-between py-1 border-b border-game-border/30">
             <span className="font-data text-sm text-game-text-dim">AVG SCORE</span>
             <span className="font-data text-lg text-game-text font-bold">
               {avgScore}
             </span>
           </div>
-          <div className="flex items-center justify-between py-2 border-b border-game-border/30">
+          <div className="flex items-center justify-between py-1 border-b border-game-border/30">
             <span className="font-data text-sm text-game-text-dim">BREAKDOWN</span>
             <span className={`font-data text-lg font-bold ${
               passed ? 'text-success' : 'text-danger'
@@ -187,14 +187,14 @@ function ResultModalInner({ onBackToMenu, onGoShop }: ResultModalProps) {
               {totalValue}<span className={`text-sm ${isHard ? 'text-danger/50' : 'text-game-text-dim'}`}>/{threshold}</span>
             </span>
           </div>
-          <div className="flex items-center justify-between py-2 border-b border-game-border/30">
+          <div className="flex items-center justify-between py-1 border-b border-game-border/30">
             <span className="font-data text-sm text-game-text-dim">ROUNDS</span>
             <span className="font-data text-lg text-game-text font-bold">
               {meter.rounds.length}
             </span>
           </div>
           {!isEndless && (
-            <div className="flex items-center justify-between py-2 border-b border-game-border/30">
+            <div className="flex items-center justify-between py-1 border-b border-game-border/30">
               <span className="font-data text-sm text-game-text-dim">PASS LINE</span>
               <span className={`font-data text-sm ${isHard ? 'text-danger/70' : 'text-game-text-dim'}`}>
                 ≥ {threshold} BREAKDOWN
@@ -202,7 +202,7 @@ function ResultModalInner({ onBackToMenu, onGoShop }: ResultModalProps) {
             </div>
           )}
           {!isEndless && bestScores[currentLevel] && bestScores[currentLevel] > 0 && (
-            <div className="flex items-center justify-between py-2 border-b border-game-border/30">
+            <div className="flex items-center justify-between py-1 border-b border-game-border/30">
               <span className="font-data text-sm text-game-text-dim">BEST RECORD</span>
               <span className="font-data text-lg text-accent font-bold">
                 {bestScores[currentLevel]}
@@ -213,8 +213,8 @@ function ResultModalInner({ onBackToMenu, onGoShop }: ResultModalProps) {
 
         {/* 加分奖励（通关时显示） */}
         {bonus && bonus.passed && (
-          <div className="mb-6 animate-fade-in">
-            <div className="flex items-center justify-between py-2 border-b border-game-border/30">
+          <div className="mb-4 animate-fade-in">
+            <div className="flex items-center justify-between py-1 border-b border-game-border/30">
               <button
                 type="button"
                 onClick={() => {
@@ -240,7 +240,7 @@ function ResultModalInner({ onBackToMenu, onGoShop }: ResultModalProps) {
               </span>
             </div>
             {showBonusDetails && (
-              <div className="mt-3 space-y-2 border border-accent/30 bg-accent/5 p-3 text-xs font-data">
+              <div className="mt-2 space-y-1.5 border border-accent/30 bg-accent/5 p-3 text-xs font-data">
                 <div className="flex justify-between">
                   <span className="text-game-text-dim">基础分 (BREAKDOWN)</span>
                   <span className="text-game-text">{bonus.baseScore}</span>
@@ -273,7 +273,7 @@ function ResultModalInner({ onBackToMenu, onGoShop }: ResultModalProps) {
         )}
 
         {/* 按钮 */}
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2">
           {isEndless ? (
             <>
               <button
@@ -381,7 +381,7 @@ function ResultModalInner({ onBackToMenu, onGoShop }: ResultModalProps) {
         </div>
 
         {/* 底部信息 */}
-        <div className="mt-6 pt-4 border-t border-game-border flex items-center justify-between">
+        <div className="mt-4 pt-3 border-t border-game-border flex items-center justify-between">
           <span className="font-data text-[10px] text-game-text-dim tracking-wider">
             SYS: v2.0.77 // CHIRAL: 1.21
           </span>

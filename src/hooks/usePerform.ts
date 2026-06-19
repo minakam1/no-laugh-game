@@ -494,7 +494,7 @@ ${hardHint}
                 throw new Error('no brace');
               }
             } catch {
-              console.warn('[裁判JSON解析失败] 原始响应:', judgeResult.slice(0, 200));
+              if (import.meta.env.DEV) console.warn('[裁判JSON解析失败] 原始响应:', judgeResult.slice(0, 200));
               funnyScore = 5;
               reason = '质检员打了个盹';
             }
