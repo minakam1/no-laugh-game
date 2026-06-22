@@ -222,17 +222,11 @@ class AudioManager {
     }
   }
 
-  private rampGain(gain: GainNode, target: number, fadeMs: number): void {
-    if (!this.ctx) return;
-    const now = this.ctx.currentTime;
-    const fadeSeconds = Math.max(0.01, fadeMs / 1000);
-    gain.gain.cancelScheduledValues(now);
-    gain.gain.setValueAtTime(gain.gain.value, now);
-    gain.gain.linearRampToValueAtTime(target, now + fadeSeconds);
-  }
-
-  private async transitionBgm(variant: BgmVariant, fadeMs: number): Promise<void> {
+  private async transitionBgm(variant: BgmVariant, _fadeMs: number): Promise<void> {
+    await this.waitUntilBgmStartIdle(); // 避免与首次交互的 bgmStart 竞态
     if (this.activeBgmVariant === variant) return;
+
+    const previousVariant: BgmVariant = this.activeBgmVariant;
     this.activeBgmVariant = variant;
 
     if (!this.bgmPlaying) {
@@ -245,18 +239,18 @@ class AudioManager {
       this.bgmFadeStopTimerId = null;
     }
 
-    const previousVariant: BgmVariant = variant === 'main' ? 'climax' : 'main';
+    // 先停掉旧变体发生器，再启动新变体，绝不同时播放
+    this.getExistingBgmGenerator(previousVariant)?.stop();
+    this.setVariantMix(variant);
     await this.ensureBgmVariant(variant);
-    this.rampGain(this.getBgmVariantGain(variant), 1, fadeMs);
-    this.rampGain(this.getBgmVariantGain(previousVariant), 0, fadeMs);
-
-    this.bgmFadeStopTimerId = setTimeout(() => {
-      this.getExistingBgmGenerator(previousVariant)?.stop();
-      this.bgmFadeStopTimerId = null;
-    }, fadeMs + 120);
   }
 
   async bgmStart(): Promise<void> {
+    // 如果 AudioContext 被浏览器暂停（自动播放策略），先恢复
+    // 这解决了序章等场景下 BGM 在用户交互前启动，AudioContext 被挂起导致无声的问题
+    if (this.ctx && this.ctx.state === 'suspended') {
+      await this.ctx.resume();
+    }
     if (this.bgmPlaying || this.bgmStarting) return;
     this.bgmStarting = true;
     try {
@@ -301,6 +295,30 @@ class AudioManager {
     if (this.bgmGain) {
       this.bgmGain.gain.value = this.bgmVolume;
     }
+  }
+
+  private async waitUntilBgmStartIdle(): Promise<void> {
+    while (this.bgmStarting) {
+      await new Promise((resolve) => setTimeout(resolve, 30));
+    }
+  }
+
+  /** 序章专用：彻底停止所有 BGM → 只启动高潮 BGM */
+  async hardSwitchToClimax(): Promise<void> {
+    await this.waitUntilBgmStartIdle(); // 避免与首次交互的 bgmStart 竞态
+    this.bgmStop(); // 先全清，确保旧 BGM 完全停止
+    this.activeBgmVariant = 'climax';
+    this.setVariantMix('climax'); // 提前设置 gain 路由
+    await this.bgmStart();
+  }
+
+  /** 序章结束：彻底停止所有 BGM → 只启动主 BGM */
+  async hardSwitchToMain(): Promise<void> {
+    await this.waitUntilBgmStartIdle(); // 避免与首次交互的 bgmStart 竞态
+    this.bgmStop(); // 先全清，确保旧 BGM 完全停止
+    this.activeBgmVariant = 'main';
+    this.setVariantMix('main'); // 提前设置 gain 路由
+    await this.bgmStart();
   }
 
   transitionToClimaxBgm(fadeMs = 1800): Promise<void> {

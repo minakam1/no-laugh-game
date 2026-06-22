@@ -14,10 +14,6 @@ export function useBgm(autoPlay = true) {
   const audioRef = useRef(getAudioManager());
   const soundRef = useRef(getSoundManager());
   const initializedRef = useRef(false);
-  const isPlayingRef = useRef(isPlaying);
-
-  // 同步 ref 到最新 isPlaying 值
-  isPlayingRef.current = isPlaying;
 
   // 初始化 AudioContext
   const ensureInit = useCallback(async () => {
@@ -34,11 +30,13 @@ export function useBgm(autoPlay = true) {
     initializedRef.current = true;
   }, []);
 
-  // BGM 播放
+  // BGM 播放（同时确保 AudioContext 恢复运行）
   const play = useCallback(async () => {
     try {
       await ensureInit();
-      await audioRef.current.bgmStart();
+      // 用户交互后必须恢复 AudioContext（浏览器自动播放策略）
+      const mgr = audioRef.current;
+      await mgr.bgmStart();
       setIsPlaying(true);
     } catch (e) {
       console.warn('BGM play failed:', e);
@@ -84,10 +82,8 @@ export function useBgm(autoPlay = true) {
     const handleInteraction = () => {
       document.removeEventListener('click', handleInteraction);
       document.removeEventListener('keydown', handleInteraction);
-      // 使用 ref 获取最新的 isPlaying 状态，避免闭包过期
-      if (!isPlayingRef.current) {
-        play();
-      }
+      // 无论 BGM 是否已标记为播放，都调用 play() 以恢复被浏览器挂起的 AudioContext
+      play();
     };
 
     document.addEventListener('click', handleInteraction);

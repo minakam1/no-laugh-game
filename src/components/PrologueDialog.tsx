@@ -281,7 +281,7 @@ function DialoguePhase({ onComplete, onSkip }: DialoguePhaseProps) {
   }, [showFull, index, current.text.length, onComplete]);
 
   const sideClass = current.side === 'left' ? 'items-start' : current.side === 'right' ? 'items-end' : 'items-center';
-  const speakerColor = current.speaker === '主角' ? 'text-accent-secondary'
+  const speakerColor = current.speaker === '主角' ? 'text-yellow-400'
     : current.speaker === '特工L' ? 'text-cyan-400'
     : 'text-pink-400';
 
@@ -341,14 +341,14 @@ function DialoguePhase({ onComplete, onSkip }: DialoguePhaseProps) {
       </div>
 
       <div className="absolute left-1/2 -translate-x-1/2 bottom-[22%] w-40 h-80 pointer-events-none">
-        <div className="w-full h-full rounded-lg border border-accent-secondary/30 bg-accent-secondary/10 flex items-center justify-center">
+        <div className="w-full h-full rounded-lg border border-yellow-400/30 flex items-center justify-center">
           <span className="text-5xl">🧑</span>
         </div>
       </div>
 
       {/* 主角高亮 */}
       {current.side === 'center' && (
-        <div className="absolute left-1/2 -translate-x-1/2 bottom-[22%] w-40 h-80 rounded-lg border-2 border-accent-secondary animate-neon-flicker pointer-events-none" />
+        <div className="absolute left-1/2 -translate-x-1/2 bottom-[22%] w-40 h-80 rounded-lg border-2 border-yellow-400 animate-neon-flicker pointer-events-none" />
       )}
 
       {/* 对话框 */}
@@ -363,7 +363,7 @@ function DialoguePhase({ onComplete, onSkip }: DialoguePhaseProps) {
             style={{
               background: current.side === 'left' ? 'linear-gradient(90deg, transparent, #22d3ee, transparent)'
                 : current.side === 'right' ? 'linear-gradient(90deg, transparent, #f472b6, transparent)'
-                : 'linear-gradient(90deg, transparent, var(--accent-secondary), transparent)',
+                : 'linear-gradient(90deg, transparent, #facc15, transparent)',
             }}
           />
           <p className="font-data text-game-text text-base leading-relaxed min-h-[1.5em]">

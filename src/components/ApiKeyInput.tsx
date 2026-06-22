@@ -2,9 +2,10 @@
 // ApiKeyInput — API 配置 + 连通性测试（赛博朋克直播控制台风格）
 // ============================================================
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { HoverTranslate } from './HoverTranslate';
 import { getSoundManager } from '@/audio/SoundManager';
+import { getDefaultAuth, isDefaultAuth } from '@/utils/defaultKey';
 
 export interface ApiConfig {
   apiKey: string;
@@ -30,16 +31,28 @@ const DEEPSEEK_DEFAULTS = {
   model: 'deepseek-v4-flash',
 };
 
+/** 获取实际用于 API 调用的 Key：默认 Key 或用户自填 Key */
+function resolveKey(usingDefault: boolean, userKey: string): string {
+  return usingDefault ? getDefaultAuth() : userKey.trim();
+}
+
 export function ApiKeyInput({ onConfirm, savedConfig }: ApiKeyInputProps) {
   const sound = getSoundManager();
-  const [apiKey, setApiKey] = useState(savedConfig?.apiKey || '');
-  const [baseUrl, setBaseUrl] = useState(savedConfig?.baseUrl || LOCAL_DEFAULTS.baseUrl);
-  const [model, setModel] = useState(savedConfig?.model || LOCAL_DEFAULTS.model);
+  // Key 状态：usingDefaultKey=true 时不存真实值，只在提交/测试时从 getDefaultAuth() 取值
+  const [usingDefaultKey, setUsingDefaultKey] = useState(
+    !savedConfig?.apiKey || isDefaultAuth(savedConfig.apiKey)
+  );
+  const [apiKey, setApiKey] = useState(
+    usingDefaultKey ? '' : (savedConfig?.apiKey || '')
+  );
+  const [baseUrl, setBaseUrl] = useState(savedConfig?.baseUrl || DEEPSEEK_DEFAULTS.baseUrl);
+  const [model, setModel] = useState(savedConfig?.model || DEEPSEEK_DEFAULTS.model);
   const [supportsImages, setSupportsImages] = useState(savedConfig?.supportsImages || false);
   const [showKey, setShowKey] = useState(false);
   const [testStatus, setTestStatus] = useState<TestStatus>('idle');
   const [testError, setTestError] = useState('');
   const [testResult, setTestResult] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleTest = async () => {
     if (!baseUrl.trim()) {
@@ -57,12 +70,14 @@ export function ApiKeyInput({ onConfirm, savedConfig }: ApiKeyInputProps) {
     setTestError('');
     setTestResult('');
 
+    const effectiveKey = resolveKey(usingDefaultKey, apiKey);
+
     try {
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
       };
-      if (apiKey.trim()) {
-        headers['Authorization'] = `Bearer ${apiKey.trim()}`;
+      if (effectiveKey) {
+        headers['Authorization'] = `Bearer ${effectiveKey}`;
       }
 
       const isLocal = baseUrl.includes('127.0.0.1') || baseUrl.includes('localhost');
@@ -127,8 +142,10 @@ export function ApiKeyInput({ onConfirm, savedConfig }: ApiKeyInputProps) {
       return;
     }
 
+    const effectiveKey = resolveKey(usingDefaultKey, apiKey);
+
     const config: ApiConfig = {
-      apiKey: apiKey.trim(),
+      apiKey: effectiveKey,
       baseUrl: baseUrl.trim().replace(/\/$/, ''),
       model: model.trim(),
       supportsImages,
@@ -198,6 +215,8 @@ export function ApiKeyInput({ onConfirm, savedConfig }: ApiKeyInputProps) {
                 setModel(LOCAL_DEFAULTS.model);
                 setApiKey('');
                 setSupportsImages(false);
+                setUsingDefaultKey(false);
+                setShowKey(false);
               }}
               onMouseEnter={() => sound.play('ui_button_hover')}
               className="group flex-1 py-1.5 border border-accent/40 text-[10px] font-cyber text-accent
@@ -213,6 +232,8 @@ export function ApiKeyInput({ onConfirm, savedConfig }: ApiKeyInputProps) {
                 setModel(DEEPSEEK_DEFAULTS.model);
                 setApiKey('');
                 setSupportsImages(false);
+                setUsingDefaultKey(true);
+                setShowKey(false);
               }}
               onMouseEnter={() => sound.play('ui_button_hover')}
               className="group flex-1 py-1.5 border border-accent/40 text-[10px] font-cyber text-accent
@@ -228,6 +249,8 @@ export function ApiKeyInput({ onConfirm, savedConfig }: ApiKeyInputProps) {
                 setModel('');
                 setApiKey('');
                 setSupportsImages(false);
+                setUsingDefaultKey(false);
+                setShowKey(false);
               }}
               onMouseEnter={() => sound.play('ui_button_hover')}
               className="group flex-1 py-1.5 border border-game-border text-[10px] font-cyber text-game-text-dim
@@ -236,6 +259,10 @@ export function ApiKeyInput({ onConfirm, savedConfig }: ApiKeyInputProps) {
               <HoverTranslate text="◈ CUSTOM API" hoverText="◈ 自定义" />
             </button>
           </div>
+
+          <p className="text-[10px] text-game-text-dim/50 font-data leading-relaxed">
+            [NOTE] 默认 DeepSeek Key 仅供临时使用，正式发布后将移除，请替换为自有 API Key
+          </p>
 
           {/* API Base URL */}
           <div>
@@ -260,22 +287,50 @@ export function ApiKeyInput({ onConfirm, savedConfig }: ApiKeyInputProps) {
               &gt;&gt; API KEY <span className="text-game-text-dim font-normal">[本地模型可留空]</span>
             </label>
             <div className="relative">
-              <input
-                type={showKey ? 'text' : 'password'}
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                placeholder="你的 API Key"
-                className="cyber-input w-full rounded-none pr-16"
-              />
+              {usingDefaultKey ? (
+                /* 默认 Key 模式：占位文本，不可见真实 Key */
+                <div className="cyber-input w-full rounded-none pr-16 flex items-center text-game-text-dim/60 font-data bg-[#0a0a0a]/60 select-none"
+                     onClick={() => {
+                       sound.play('ui_button_press');
+                       setUsingDefaultKey(false);
+                       setApiKey('');
+                       setShowKey(true);
+                       setTimeout(() => inputRef.current?.focus(), 50);
+                     }}
+                     title="点击输入自定义 API Key">
+                  🔒 临时 Key 已激活 — 点击此处输入自有 Key
+                </div>
+              ) : (
+                <input
+                  ref={inputRef}
+                  type={showKey ? 'text' : 'password'}
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  placeholder="你的 API Key（替换默认 Key）"
+                  className="cyber-input w-full rounded-none pr-16"
+                />
+              )}
               <button
                 type="button"
-                onClick={() => { sound.play('ui_button_press'); setShowKey(!showKey); }}
+                onClick={() => {
+                  sound.play('ui_button_press');
+                  if (usingDefaultKey) {
+                    setUsingDefaultKey(false);
+                    setApiKey('');
+                    setShowKey(true);
+                    setTimeout(() => inputRef.current?.focus(), 50);
+                  } else {
+                    setShowKey(!showKey);
+                  }
+                }}
                 onMouseEnter={() => sound.play('ui_button_hover')}
                 className="group absolute right-0 top-0 bottom-0 px-4 text-game-text-dim font-cyber text-[10px]
                            hover:text-accent transition-colors border-l border-game-border"
                 tabIndex={-1}
               >
-                {showKey ? (
+                {usingDefaultKey ? (
+                  <HoverTranslate text="EDIT" hoverText="编辑" />
+                ) : showKey ? (
                   <HoverTranslate text="HIDE" hoverText="隐藏" />
                 ) : (
                   <HoverTranslate text="SHOW" hoverText="显示" />
@@ -283,7 +338,7 @@ export function ApiKeyInput({ onConfirm, savedConfig }: ApiKeyInputProps) {
               </button>
             </div>
             <p className="mt-1.5 text-xs text-game-text-dim/60 font-data">
-              [SECURE] Key 仅保存在当前标签页；生产模式可由云函数环境变量托管
+              [SECURE] Key 仅保存在当前标签页；默认 Key 不显示、不可查看
             </p>
           </div>
 

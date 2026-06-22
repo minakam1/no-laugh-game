@@ -142,6 +142,15 @@ export const SHOP_ITEMS: Record<string, ShopItem> = {
     effect: 'score_plus_3',
     maxOwn: 2,
   },
+  bribeEnvelope: {
+    id: 'bribeEnvelope',
+    name: '贿赂专用信封',
+    emoji: '💌',
+    description: '使用后立即获得18头肯，可在场内购买道具',
+    cost: 18,
+    effect: 'points_plus_18',
+    maxOwn: 10,
+  },
   retryToken: {
     id: 'retryToken',
     name: '再来一瓶',
@@ -173,10 +182,49 @@ export const SHOP_ITEMS: Record<string, ShopItem> = {
   },
 };
 
-const SAVE_VERSION = 1;
+const SAVE_VERSION = 2; // 版本升级：加入签名校验
 const SAVE_KEY = 'no-laugh-save';
 const DB_NAME = 'NoLaughDB';
 const DB_STORE = 'saves';
+
+// 存档签名盐值（仅用于检测篡改，非加密安全用途）
+const SAVE_SALT = 'nlg_sig_7742x';
+
+/** 对关键数据字段计算简单校验哈希（防普通玩家篡改） */
+function computeChecksum(data: SaveData): string {
+  const fields = [
+    data.storyProgress.unlockedLevels,
+    data.storyProgress.bestScores?.[1] ?? 0,
+    data.kentou,
+    data.points,
+    data.hasBeatenFirstLevel,
+    data.tutorialCompleted,
+    data.endlessBest.highScore,
+    Object.keys(data.inventory ?? {}).join(','),
+    Object.values(data.inventory ?? {}).join(','),
+    SAVE_SALT,
+  ];
+  const raw = fields.join('|');
+  // djb2 哈希
+  let hash = 5381;
+  for (let i = 0; i < raw.length; i++) {
+    hash = ((hash << 5) + hash + raw.charCodeAt(i)) | 0;
+  }
+  return (hash >>> 0).toString(16);
+}
+
+/** 校验存档完整性，返回有效数据或 null */
+function verifySaveIntegrity(data: SaveData): SaveData | null {
+  if (data.version !== SAVE_VERSION) return null;
+  // 兼容旧存档（无签名）
+  if (!data.signature) return data;
+  const expected = computeChecksum(data);
+  if (expected !== data.signature) {
+    console.warn('[安全] 存档签名校验失败，数据可能已被篡改');
+    return null;
+  }
+  return data;
+}
 
 function createInitialGameData() {
   return {
@@ -328,7 +376,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     useAchievementStore.getState().checkOnSubmit(roundRecord, usedProps, chainsCount);
 
     if (isLevelComplete) {
-      useAchievementStore.getState().checkOnClear(currentLevel, newRound, state.sceneType);
+      useAchievementStore.getState().checkOnClear(currentLevel, newRound, state.sceneType, passed, difficulty);
     }
   },
 
@@ -464,6 +512,11 @@ export const useGameStore = create<GameState>((set, get) => ({
     const baseRounds = mode === 'endless' ? Infinity : 10;
     const effects = get().activeShopEffects;
     const extraRounds = effects.includes('rounds_plus_2') ? 2 : 0;
+    // 首次进入困难模式成就
+    if (diff === 'hard' && !useAchievementStore.getState().track.hardModeEntered) {
+      useAchievementStore.setState((s) => ({ track: { ...s.track, hardModeEntered: true } }));
+      useAchievementStore.getState().unlock('enter_hard');
+    }
     set({
       mode,
       currentLevel: lvl,
@@ -479,6 +532,11 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   setDifficulty: (difficulty) => {
+    // 首次进入困难模式成就
+    if (difficulty === 'hard' && !useAchievementStore.getState().track.hardModeEntered) {
+      useAchievementStore.setState((s) => ({ track: { ...s.track, hardModeEntered: true } }));
+      useAchievementStore.getState().unlock('enter_hard');
+    }
     set({ difficulty });
   },
 
@@ -624,6 +682,15 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     const newEffects = [...state.activeShopEffects, item.effect];
 
+    // 贿赂信封：立即获得头肯，不加入 activeShopEffects
+    if (item.effect === 'points_plus_18') {
+      set({
+        inventory: newInventory,
+        points: state.points + 18,
+      });
+      return true;
+    }
+
     // 延时沙漏特殊处理：直接修改 maxRounds
     const updates: Partial<GameState> = {
       inventory: newInventory,
@@ -645,6 +712,11 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   /** 完成新手引导 */
   completeTutorial: () => {
+    // 检测「但是，我拒绝！」成就：引导中未使用香蕉皮
+    const track = useAchievementStore.getState().track;
+    if (!track.usedPropTypes.has('banana')) {
+      useAchievementStore.getState().unlock('no_banana');
+    }
     set({ tutorialStep: null, tutorialCompleted: true });
   },
 
@@ -667,7 +739,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
 export function serializeSave(): SaveData {
   const state = useGameStore.getState();
-  return {
+  const data: SaveData = {
     version: SAVE_VERSION,
     storyProgress: {
       unlockedLevels: state.unlockedLevels,
@@ -688,6 +760,9 @@ export function serializeSave(): SaveData {
     tutorialCompleted: state.tutorialCompleted,
     savedAt: Date.now(),
   };
+  // 计算防篡改签名
+  data.signature = computeChecksum(data);
+  return data;
 }
 
 // IndexedDB Promise 包装
@@ -779,7 +854,7 @@ export function loadFromStorage(): SaveData | null {
     const raw = localStorage.getItem(SAVE_KEY);
     if (raw) {
       const data = JSON.parse(raw) as SaveData;
-      if (data.version === SAVE_VERSION) return data;
+      return verifySaveIntegrity(data);
     }
   } catch {
     // ignore
@@ -798,7 +873,7 @@ export function loadFromStorageAsync(): Promise<SaveData | null> {
   // 再尝试 IndexedDB
   return readIndexedDB()
     .then((data) => {
-      if (data && data.version === SAVE_VERSION) return data;
+      if (data) return verifySaveIntegrity(data);
       return null;
     })
     .catch(() => null);

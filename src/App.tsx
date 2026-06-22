@@ -15,6 +15,7 @@ import { DevTools } from '@/components/DevTools';
 import { AchievementPopup } from '@/components/AchievementPopup';
 import { useBgm } from '@/hooks/useBgm';
 import { useGameSfx } from '@/hooks/useGameSfx';
+import { getDefaultAuth } from '@/utils/defaultKey';
 import type { SaveData } from '@/types';
 
 type AppPhase = 'loading' | 'prologue' | 'config' | 'menu' | 'playing' | 'shop';
@@ -45,15 +46,19 @@ export default function App() {
   // 游戏状态音效自动触发
   useGameSfx();
 
+  const DEFAULT_DEEPSEEK_API_KEY = getDefaultAuth();
+  const DEFAULT_DEEPSEEK_BASE_URL = 'https://api.deepseek.com';
+  const DEFAULT_DEEPSEEK_MODEL = 'deepseek-v4-flash';
+
   // 启动：检查已有配置和存档
   useEffect(() => {
-    const savedKey = sessionStorage.getItem('apiKey') || '';
-    const savedUrl = localStorage.getItem('apiBaseUrl') || '';
-    const savedModel = localStorage.getItem('apiModel') || '';
+    const savedKey = sessionStorage.getItem('apiKey') || DEFAULT_DEEPSEEK_API_KEY;
+    const savedUrl = localStorage.getItem('apiBaseUrl') || DEFAULT_DEEPSEEK_BASE_URL;
+    const savedModel = localStorage.getItem('apiModel') || DEFAULT_DEEPSEEK_MODEL;
     const savedSupportsImages = localStorage.getItem('apiSupportsImages') === 'true';
 
     if (savedUrl && savedModel) {
-      // 只要有 URL 和 Model 就可以恢复（Key 可选）
+      // 只要有 URL 和 Model 就可以恢复（Key 可选，无保存key时用默认DeepSeek key）
       setApiConfig({
         apiKey: savedKey,
         baseUrl: savedUrl,
@@ -70,6 +75,13 @@ export default function App() {
       setAppPhase(!prologueSeen ? 'prologue' : hasConfig ? 'menu' : 'config');
     });
   }, []);
+
+  // 序章 → 高潮BGM；退出序章 → 切回主BGM
+  useEffect(() => {
+    if (appPhase === 'prologue') {
+      void audioManager.hardSwitchToClimax();
+    }
+  }, [appPhase, audioManager]);
 
   // 自动存档：每当 phase 变为 'result' 时触发
   useEffect(() => {
@@ -142,12 +154,13 @@ export default function App() {
   // 开场剧情结束 → 进入配置/菜单，触发完整引导
   const handlePrologueComplete = useCallback(() => {
     localStorage.setItem('prologueSeen', 'true');
-    const savedUrl = localStorage.getItem('apiBaseUrl') || '';
-    const savedModel = localStorage.getItem('apiModel') || '';
+    void audioManager.transitionToMainBgm();
+    const savedUrl = localStorage.getItem('apiBaseUrl') || DEFAULT_DEEPSEEK_BASE_URL;
+    const savedModel = localStorage.getItem('apiModel') || DEFAULT_DEEPSEEK_MODEL;
     const hasConfig = !!(savedUrl && savedModel);
     setAppPhase(hasConfig ? 'menu' : 'config');
     setTutorialStep('welcome');
-  }, [setTutorialStep]);
+  }, [setTutorialStep, audioManager]);
 
   // 回到设置（API 配置页）
   const handleBackToConfig = useCallback(() => {

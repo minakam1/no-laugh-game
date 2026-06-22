@@ -149,8 +149,10 @@ export function TutorialOverlay() {
       if (!propKey) return;
       placedPropsRef.current.add(propKey);
 
-      // 需要香蕉皮 AND 主角都放好
-      if (placedPropsRef.current.has('banana') && placedPropsRef.current.has('clumsyNpc')) {
+      // 需要主角 + 至少一个道具都放好（不强制香蕉皮，给玩家拒绝的权利）
+      const hasNpc = placedPropsRef.current.has('clumsyNpc');
+      const propTypes = [...placedPropsRef.current].filter((p) => p !== 'clumsyNpc');
+      if (hasNpc && propTypes.length >= 1) {
         if (stepRef.current === 'first_round:place') {
           setTutorialStep('first_round:perform');
         }

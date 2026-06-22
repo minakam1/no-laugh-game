@@ -194,45 +194,6 @@ export class BootScene extends Phaser.Scene {
     gfx.destroy();
   }
 
-  private createNpcSilhouette(): void {
-    const w = 64;
-    const h = 96;
-    const gfx = this.make.graphics({ x: 0, y: 0 });
-
-    gfx.fillStyle(0x000000, 1);
-
-    // 头部 - 圆
-    gfx.fillCircle(32, 10, 8);
-
-    // 身体 - 上宽下窄梯形（从颈部到胯部，连接头和腿）
-    gfx.beginPath();
-    gfx.moveTo(22, 18);   // 左上（肩膀）
-    gfx.lineTo(42, 18);   // 右上（肩膀）
-    gfx.lineTo(40, 48);   // 右下（胯部）
-    gfx.lineTo(24, 48);   // 左下（胯部）
-    gfx.closePath();
-    gfx.fillPath();
-
-    // 左臂 - 贴身体下垂
-    gfx.fillRect(16, 18, 6, 30);
-
-    // 右臂 - 贴身体下垂
-    gfx.fillRect(42, 18, 6, 30);
-
-    // 左腿 - 从胯部延伸
-    gfx.fillRect(24, 46, 7, 44);
-
-    // 右腿 - 从胯部延伸
-    gfx.fillRect(33, 46, 7, 44);
-
-    // 白色眼睛
-    gfx.fillStyle(0xffffff, 1);
-    gfx.fillCircle(28, 8, 2);
-    gfx.fillCircle(36, 8, 2);
-
-    gfx.generateTexture('prop-npc', w, h);
-    gfx.destroy();
-  }
 
   create(): void {
     this.scene.start('EditorScene');

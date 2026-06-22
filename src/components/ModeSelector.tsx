@@ -5,7 +5,7 @@
 import { useState, useEffect } from 'react';
 import { useGameStore, DIFFICULTY_CONFIG, PASS_THRESHOLD } from '@/store/gameStore';
 import { useAchievementStore } from '@/store/achievementStore';
-import { ACHIEVEMENTS, type AchievementId } from '@/data/achievements';
+import { ACHIEVEMENTS } from '@/data/achievements';
 import { HoverTranslate } from './HoverTranslate';
 import { getSoundManager } from '@/audio/SoundManager';
 import type { SaveData } from '@/types';

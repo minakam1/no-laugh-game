@@ -3,7 +3,7 @@
 // 显示在顶栏下方，可快速使用已购买的降低难度道具
 // ============================================================
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useGameStore, SHOP_ITEMS } from '@/store/gameStore';
 import { getSoundManager } from '@/audio/SoundManager';

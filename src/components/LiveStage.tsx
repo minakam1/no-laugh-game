@@ -184,11 +184,27 @@ export function LiveStage({ apiConfig, onBackToMenu, onBackToConfig, onGoShop }:
   }, [mode, phase, currentLevel, sound]);
 
   // ============================================================
-  // 玩家放置道具时触发弹幕加速（模拟观众看到动作后的反应）
+  // 玩家放置道具时触发弹幕加速 + 5+道具成就检测
   // ============================================================
+  const placedCountRef = useRef(0);
   useEffect(() => {
     const unsub = eventBus.on('prop-placed', () => {
-      triggerDanmakuBoost(3000); // 放置后3秒弹幕加速
+      placedCountRef.current += 1;
+      triggerDanmakuBoost(3000);
+      // 摆放 5 个以上道具（含主角）即时触发成就
+      if (placedCountRef.current >= 5) {
+        useAchievementStore.getState().unlock('props_5plus');
+      }
+    });
+    return unsub;
+  }, []);
+
+  // 新回合/新局重置计数
+  useEffect(() => {
+    const unsub = useGameStore.subscribe((state, prevState) => {
+      if (state.currentRound !== prevState.currentRound || state.phase === 'editing' && prevState.phase === 'result') {
+        placedCountRef.current = 0;
+      }
     });
     return unsub;
   }, []);

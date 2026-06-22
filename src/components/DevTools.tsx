@@ -6,6 +6,7 @@ import { useState, useCallback } from 'react';
 import { clearStoredSave, useGameStore } from '@/store/gameStore';
 import { useAchievementStore } from '@/store/achievementStore';
 import { getSoundManager } from '@/audio/SoundManager';
+import { ACHIEVEMENTS, type AchievementId } from '@/data/achievements';
 
 interface SceneItem {
   id: string;
@@ -25,7 +26,11 @@ interface DevToolsProps {
 }
 
 export function DevTools({ onReplayPrologue, onReplayTutorial, onClearGameRecords }: DevToolsProps) {
+  // 生产环境完全隐藏开发者工具
+  if (!import.meta.env.DEV) return null;
+
   const [open, setOpen] = useState(false);
+  const [showAch, setShowAch] = useState(false);
 
   const handleToggle = useCallback(() => {
     setOpen((o) => !o);
@@ -111,6 +116,15 @@ export function DevTools({ onReplayPrologue, onReplayTutorial, onClearGameRecord
                 </button>
               ))}
               <button
+                className="w-full text-left px-3 py-2 mt-2 border border-accent-secondary/40
+                           bg-accent-secondary/10 text-accent-secondary text-sm font-data
+                           hover:border-accent-secondary hover:text-game-text
+                           transition-all"
+                onClick={() => setShowAch(true)}
+              >
+                ▸ 🏆 查看全部成就
+              </button>
+              <button
                 className="w-full text-left px-3 py-2 mt-2 border border-danger/40
                            bg-danger/10 text-danger text-sm font-data
                            hover:border-danger hover:text-game-text
@@ -123,6 +137,56 @@ export function DevTools({ onReplayPrologue, onReplayTutorial, onClearGameRecord
             <p className="text-game-text-dim/30 font-data text-[9px] mt-3 text-center">
               点击外部关闭
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* 成就查看器 */}
+      {showAch && (
+        <div
+          className="fixed inset-0 z-[401] flex items-center justify-center bg-black/80"
+          onClick={() => setShowAch(false)}
+        >
+          <div
+            className="bg-black/95 border border-game-border rounded-sm px-6 py-4 max-h-[80vh] w-[500px] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="font-cyber text-accent text-sm tracking-[4px] mb-3 text-center sticky top-0 bg-black/95 py-2">
+              🏆 全部成就（共 {Object.keys(ACHIEVEMENTS).length} 个）
+            </p>
+            <div className="flex flex-col gap-1">
+              {(Object.keys(ACHIEVEMENTS) as AchievementId[]).map((id) => {
+                const ach = ACHIEVEMENTS[id];
+                const unlocked = useAchievementStore.getState().unlocked.has(id);
+                return (
+                  <div
+                    key={id}
+                    className={`flex items-center gap-2 px-2 py-1.5 border text-xs font-data ${
+                      unlocked
+                        ? 'border-accent/30 bg-accent/5 text-game-text'
+                        : 'border-game-border/20 bg-game-surface/20 text-game-text-dim/30'
+                    }`}
+                  >
+                    <span className="text-base">{unlocked ? ach.icon : '🔒'}</span>
+                    <div className="flex-1 min-w-0">
+                      <span className={unlocked ? 'text-accent' : ''}>
+                        {unlocked ? ach.title : (ach.hidden ? '???' : ach.title)}
+                      </span>
+                      <span className="text-game-text-dim/50 ml-1.5">
+                        {unlocked || !ach.hidden ? ach.desc : ''}
+                      </span>
+                    </div>
+                    {unlocked && <span className="text-accent text-[10px]">✓</span>}
+                  </div>
+                );
+              })}
+            </div>
+            <button
+              className="w-full mt-3 px-3 py-1.5 border border-game-border/30 text-game-text-dim text-xs font-cyber hover:border-accent-secondary hover:text-accent-secondary transition-all"
+              onClick={() => setShowAch(false)}
+            >
+              关闭
+            </button>
           </div>
         </div>
       )}

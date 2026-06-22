@@ -471,7 +471,6 @@ const EFFECT_REGISTRY: Partial<Record<PropKey, PropEffectFn>> = {
     let lastSpitSpawn = 0;
     let lastHitCheck = 0;
     const hitPropsRedTimers: Map<string, number> = new Map();
-    const NPC_SCALE = 3.5;
     let npcHitFlashUntil = 0;
     let npcHitFlashStart = 0;
     let npcHitWhiteFlashStart = 0;

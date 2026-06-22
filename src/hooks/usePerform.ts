@@ -18,6 +18,9 @@ const SILENCE_MESSAGES: Record<number, string> = {
 
 const TYPEWRITER_DELAY_MS = 24;
 
+/** API 请求最小间隔（毫秒），防止玩家频繁点击刷请求 */
+const MIN_REQUEST_INTERVAL_MS = 2500;
+
 interface UsePerformReturn {
   reaction: string;
   isLoading: boolean;
@@ -352,6 +355,7 @@ export function usePerform(apiConfig: ApiConfig): UsePerformReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const lastRequestTimeRef = useRef<number>(0);
 
   const currentLevel = useGameStore((s) => s.currentLevel);
   const difficulty = useGameStore((s) => s.difficulty);
@@ -362,7 +366,16 @@ export function usePerform(apiConfig: ApiConfig): UsePerformReturn {
 
   const handlePerform = useCallback(
     async (performData: PerformRequestedData) => {
+      // 请求频率限制
       if (isLoading) return;
+      const now = Date.now();
+      const elapsed = now - lastRequestTimeRef.current;
+      if (elapsed < MIN_REQUEST_INTERVAL_MS) {
+        setError(`请稍候 ${((MIN_REQUEST_INTERVAL_MS - elapsed) / 1000).toFixed(1)} 秒再表演`);
+        return;
+      }
+      lastRequestTimeRef.current = now;
+
       abortRef.current?.abort();
       abortRef.current = new AbortController();
 
@@ -394,7 +407,7 @@ export function usePerform(apiConfig: ApiConfig): UsePerformReturn {
             finalReaction = await callChatStream({
               apiConfig,
               messages,
-              maxTokens: 160,
+              maxTokens: 800,
               signal: controller.signal,
               onDelta: appendReaction,
             });
@@ -404,7 +417,7 @@ export function usePerform(apiConfig: ApiConfig): UsePerformReturn {
             finalReaction = await callChatOnce({
               apiConfig,
               messages,
-              maxTokens: 160,
+              maxTokens: 800,
               signal: controller.signal,
             });
             await typewriter(finalReaction, appendReaction);
