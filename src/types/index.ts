@@ -334,6 +334,8 @@ export interface SaveData {
   unlockedScenes?: SceneType[];
   /** 是否已完成新手引导 */
   tutorialCompleted: boolean;
+  /** 已解锁成就 ID 列表 */
+  achievements: string[];
   /** 存档签名（防篡改校验） */
   signature?: string;
   savedAt: number;

@@ -263,6 +263,9 @@ export function ApiKeyInput({ onConfirm, savedConfig }: ApiKeyInputProps) {
           <p className="text-[10px] text-game-text-dim/50 font-data leading-relaxed">
             [NOTE] 默认 DeepSeek Key 仅供临时使用，正式发布后将移除，请替换为自有 API Key
           </p>
+          <p className="text-[10px] text-accent/60 font-data leading-relaxed mt-0.5">
+            [TIP] 直接使用默认 Key，测试通过即可进入游戏
+          </p>
 
           {/* API Base URL */}
           <div>
@@ -297,8 +300,8 @@ export function ApiKeyInput({ onConfirm, savedConfig }: ApiKeyInputProps) {
                        setShowKey(true);
                        setTimeout(() => inputRef.current?.focus(), 50);
                      }}
-                     title="点击输入自定义 API Key">
-                  🔒 临时 Key 已激活 — 点击此处输入自有 Key
+                     title="点击可切换为自定义 API Key">
+                  🔒 默认 Key 已就绪 — 直接测试下方按钮即可
                 </div>
               ) : (
                 <input
@@ -392,6 +395,9 @@ export function ApiKeyInput({ onConfirm, savedConfig }: ApiKeyInputProps) {
                 <HoverTranslate text="◈ TEST SIGNAL" hoverText="◈ 测试信号" />
               )}
             </button>
+            <p className="mt-1.5 text-[10px] text-game-text-dim/40 font-data text-center">
+              [ TEST SIGNAL ] 点此验证模型是否可用，通过后即可进入游戏
+            </p>
 
             {/* 测试结果 */}
             {testStatus !== 'idle' && (

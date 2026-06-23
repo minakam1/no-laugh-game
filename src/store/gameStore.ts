@@ -17,6 +17,7 @@ import type {
 } from '@/types';
 import { classifyAction, hasProtagonist } from '@/utils/classifyAction';
 import { useAchievementStore } from '@/store/achievementStore';
+import type { AchievementId } from '@/data/achievements';
 
 // 难度配置表（README 5.3 + 4.7 节）
 // targetAvgScore: 裁判打分 0-10 的平均线（用于展示参考）
@@ -338,8 +339,9 @@ export const useGameStore = create<GameState>((set, get) => ({
     };
 
     // 故事/测试模式通关结算
+    let passed = false;
     if (isLevelComplete) {
-      const passed = newValue >= threshold;
+      passed = newValue >= threshold;
 
       updates.unlockedLevels = passed
         ? Math.max(state.unlockedLevels, currentLevel + 1)
@@ -569,6 +571,9 @@ export const useGameStore = create<GameState>((set, get) => ({
       tutorialCompleted: data.tutorialCompleted ?? false,
       tutorialStep: (data.tutorialCompleted ?? false) ? null : null,
     });
+    if (data.achievements) {
+      useAchievementStore.getState().loadFromSave(data.achievements as AchievementId[]);
+    }
   },
 
   spendPoints: (amount: number) => {
@@ -758,6 +763,7 @@ export function serializeSave(): SaveData {
     inventory: state.inventory,
     unlockedScenes: state.unlockedScenes,
     tutorialCompleted: state.tutorialCompleted,
+    achievements: useAchievementStore.getState().getSaveData(),
     savedAt: Date.now(),
   };
   // 计算防篡改签名

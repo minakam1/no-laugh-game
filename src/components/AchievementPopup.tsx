@@ -11,18 +11,16 @@ import { getSoundManager } from '@/audio/SoundManager';
 
 export function AchievementPopup() {
   const unlocked = useAchievementStore((s) => s.unlocked);
+  const restoring = useAchievementStore((s) => s._restoring);
   const prevSizeRef = useRef(unlocked.size);
   const [current, setCurrent] = useState<AchievementId | null>(null);
   const [visible, setVisible] = useState(false);
   const queueRef = useRef<AchievementId[]>([]);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sound = useRef(getSoundManager()).current;
-  const mountRef = useRef<HTMLElement | null>(null);
 
-  // 找到 .monitor-screen-content 作为挂载点
-  useEffect(() => {
-    mountRef.current = document.querySelector('.monitor-screen-content') as HTMLElement;
-  }, []);
+  // 每次渲染都更新挂载点（确保 .monitor-screen-content 出现后能捕获到）
+  const mountEl = document.querySelector('.monitor-screen-content') as HTMLElement | null;
 
   const showNext = useCallback(() => {
     setVisible(false);
@@ -40,6 +38,11 @@ export function AchievementPopup() {
 
   // 监听 store 变化 → 加入队列
   useEffect(() => {
+    // 从存档恢复成就时，跳过弹窗动画，只同步基准值
+    if (restoring) {
+      prevSizeRef.current = unlocked.size;
+      return;
+    }
     if (unlocked.size > prevSizeRef.current) {
       const prev = prevSizeRef.current;
       const allIds = Array.from(unlocked);
@@ -57,7 +60,7 @@ export function AchievementPopup() {
         }
       }
     }
-  }, [unlocked, current]);
+  }, [unlocked, restoring, current]);
 
   // 自动消失 + 音效
   useEffect(() => {
@@ -71,7 +74,7 @@ export function AchievementPopup() {
   const ach = ACHIEVEMENTS[current];
   if (!ach) return null;
 
-  const target = mountRef.current || document.body;
+  const target = mountEl || document.body;
 
   return createPortal(
     <div

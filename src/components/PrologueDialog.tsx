@@ -4,6 +4,7 @@
 // ============================================================
 
 import { useState, useCallback, useEffect } from 'react';
+import { HoverTranslate } from './HoverTranslate';
 
 // ----- 背景介绍字幕 -----
 interface IntroSlide {
@@ -216,7 +217,7 @@ function IntroPhase({ onComplete, onSkip }: IntroPhaseProps) {
         className="absolute top-4 right-4 z-20 px-4 py-1.5 border border-game-border/50 bg-black/60 text-game-text-dim font-cyber text-[11px] tracking-wider hover:border-accent-secondary hover:text-accent-secondary transition-all"
         onClick={onSkip}
       >
-        SKIP &gt;&gt;
+        <HoverTranslate text="SKIP &gt;&gt;" hoverText="跳过 &gt;&gt;" />
       </button>
     </div>
   );
@@ -384,7 +385,7 @@ function DialoguePhase({ onComplete, onSkip }: DialoguePhaseProps) {
         className="absolute top-4 right-4 z-20 px-4 py-1.5 border border-game-border/50 bg-black/60 text-game-text-dim font-cyber text-[11px] tracking-wider hover:border-accent-secondary hover:text-accent-secondary transition-all"
         onClick={onSkip}
       >
-        SKIP &gt;&gt;
+        <HoverTranslate text="SKIP &gt;&gt;" hoverText="跳过 &gt;&gt;" />
       </button>
     </div>
   );

@@ -13,6 +13,7 @@ import { TutorialOverlay } from '@/components/tutorial';
 import { PrologueDialog } from '@/components/PrologueDialog';
 import { DevTools } from '@/components/DevTools';
 import { AchievementPopup } from '@/components/AchievementPopup';
+import { useAchievementStore } from '@/store/achievementStore';
 import { useBgm } from '@/hooks/useBgm';
 import { useGameSfx } from '@/hooks/useGameSfx';
 import { getDefaultAuth } from '@/utils/defaultKey';
@@ -68,7 +69,13 @@ export default function App() {
     }
 
     loadFromStorageAsync().then((saved) => {
-      if (saved) setSaveData(saved);
+      if (saved) {
+        setSaveData(saved);
+        // 从存档恢复成就
+        if (saved.achievements?.length) {
+          useAchievementStore.getState().loadFromSave(saved.achievements as any);
+        }
+      }
       const hasConfig = !!(savedUrl && savedModel);
       // 首次游戏 → 先进序章；老玩家 → 直接进配置/菜单
       const prologueSeen = localStorage.getItem('prologueSeen') === 'true';

@@ -1098,6 +1098,66 @@ body {
 }
 
 /* ============================================
+   Mobile CRT simplification（手机端隐藏支架、精简边框）
+   ============================================ */
+@media (max-width: 767px) {
+  .monitor-frame {
+    padding: 2px !important;
+  }
+  .monitor-bezel {
+    border-width: 2px !important;
+    box-shadow: 4px 4px 0 var(--neo-ink), 6px 6px 0 var(--accent-secondary) !important;
+    padding: 2px !important;
+  }
+  .monitor-screen-area {
+    border-width: 2px !important;
+    padding: 1px !important;
+    box-shadow: 2px 2px 0 var(--accent-tertiary) !important;
+  }
+  .monitor-stand {
+    display: none !important;
+  }
+  .monitor-control-bar {
+    padding: 2px 4px 0 !important;
+    margin-top: 2px !important;
+  }
+  .monitor-led-label {
+    display: none !important;
+  }
+  .monitor-serial {
+    font-size: 6px !important;
+  }
+  .monitor-deco-btn,
+  .monitor-deco-btn-active {
+    width: 14px !important;
+    height: 6px !important;
+  }
+}
+
+/* ============================================
+   Mobile — Responsive font sizes
+   ============================================ */
+@media (max-width: 767px) {
+  .live-stage .text-\[7px\] { font-size: 10px !important; }
+  .live-stage .text-\[8px\] { font-size: 11px !important; }
+  .live-stage .text-\[9px\] { font-size: 12px !important; }
+  .live-stage .text-\[10px\] { font-size: 13px !important; }
+  .live-stage .text-\[11px\] { font-size: 14px !important; }
+  .live-stage .text-xs { font-size: 14px !important; line-height: 20px !important; }
+  .live-stage .text-sm { font-size: 16px !important; line-height: 22px !important; }
+}
+
+/* ============================================
+   Mobile — Touch-friendly minimum targets
+   ============================================ */
+@media (max-width: 767px) {
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* ============================================
    引导系统动画
    ============================================ */
 
@@ -1138,4 +1198,54 @@ body {
 
 .animate-tutorial-spotlight-pulse {
   animation: tutorialSpotlightPulse 2s ease-in-out infinite;
+}
+
+/* ============================================
+   移动端 — 底部弹出面板动画
+   ============================================ */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ============================================
+   BOSS SC 弹窗动画（手机端）
+   ============================================ */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shrinkWidth {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-shrink-width {
+  animation: shrinkWidth 8s linear forwards;
+}
+
+/* iPhone 底部安全区适配 */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }

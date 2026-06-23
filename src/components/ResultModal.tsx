@@ -105,7 +105,7 @@ function ResultModalInner({ onBackToMenu, onGoShop }: ResultModalProps) {
       {/* 扫描线 */}
       <div className="absolute inset-0 scanlines pointer-events-none" />
 
-      <div className="cyber-panel cyber-corner max-w-md w-full mx-4 p-8 animate-slide-up relative z-10 overflow-y-auto overflow-x-hidden" style={{ maxHeight: '90vh' }} data-tutorial="result-modal">
+      <div className="cyber-panel cyber-corner max-w-md w-full mx-3 sm:mx-4 p-5 sm:p-8 animate-slide-up relative z-10 overflow-y-auto overflow-x-hidden" style={{ maxHeight: '90vh' }} data-tutorial="result-modal">
         <div className="panel-pattern" aria-hidden="true" />
         <div className="corner-brackets hidden sm:block" aria-hidden="true" />
         <div className={`status-icon absolute top-4 right-4 hidden sm:inline-flex ${

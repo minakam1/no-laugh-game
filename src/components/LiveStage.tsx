@@ -42,6 +42,10 @@ const triggerDanmakuBoost = (duration: number) => {
   danmakuBoostUntil = Math.max(danmakuBoostUntil, Date.now() + duration);
 };
 
+/** 手机端弹幕降速因子（1.0=正常，移动端自动设为 ~2.0） */
+let mobileDanmakuFactor = 1.0;
+export const setMobileDanmakuFactor = (v: number) => { mobileDanmakuFactor = v; };
+
 /** 弹幕刷屏曲线参数（活人感版）
  *  三大特征模拟真实直播间：
  *  1. 随机抖动大（不是匀速发射）
@@ -79,6 +83,9 @@ function getDanmakuInterval(round: number, phaseElapsed: number): number {
     interval = Math.max(80, Math.floor(interval * 0.4));
   }
 
+  // 手机端降速
+  interval = Math.floor(interval * mobileDanmakuFactor);
+
   return interval;
 }
 
@@ -100,15 +107,15 @@ function getDanmakuBurstCount(round: number, phaseElapsed: number): number {
 function getEditingInterval(): number {
   // 弹幕加速期大幅提速
   if (Date.now() < danmakuBoostUntil) {
-    return 150 + Math.random() * 600; // 150-750ms，密集催促
+    return Math.floor((150 + Math.random() * 600) * mobileDanmakuFactor);
   }
   // 1.0-5.0秒，大幅随机，模拟真实直播间等待状态
   const base = 1200;
   const jitter = Math.random() * 3800;
   // 8%概率极快（多人同时催促），8%概率极慢（安静等待）
-  if (Math.random() < 0.08) return 200 + Math.random() * 250; // 极快
-  if (Math.random() < 0.08) return 3500 + Math.random() * 2500; // 极慢
-  return base + jitter;
+  if (Math.random() < 0.08) return Math.floor((200 + Math.random() * 250) * mobileDanmakuFactor); // 极快
+  if (Math.random() < 0.08) return Math.floor((3500 + Math.random() * 2500) * mobileDanmakuFactor); // 极慢
+  return Math.floor((base + jitter) * mobileDanmakuFactor);
 }
 
 export function LiveStage({ apiConfig, onBackToMenu, onBackToConfig, onGoShop }: LiveStageProps) {
@@ -222,6 +229,29 @@ export function LiveStage({ apiConfig, onBackToMenu, onBackToConfig, onGoShop }:
   // ============================================================
   const [showLevelHint, setShowLevelHint] = useState(false);
   const levelHint = AUDIENCE_OPENING_LINES[currentLevel];
+
+  // 预设弹幕随机观众名
+  const viewerNames = useMemo(() => [
+    'CyberGhost', 'NeonDrifter', 'GlitchHunter', 'DataRunner',
+    'PixelPunk', 'VoidWalker', 'NetRunner_77', 'ChromeHeart',
+    'SynthWave', 'ByteBandit', 'QuantumLeap', 'NeonNinja',
+    'CodeBreaker', 'DigitalSoul', 'MatrixMage', 'FluxCapacitor',
+    'SteinsGater_048', 'ChiralWalker_21', 'NERV_Operator_01',
+    'SpaceCowboy_Bebop', 'LaughingMan_001', 'Vash_Stampede_$60B',
+    '赛博阿乐', '霓虹小七', '全息老陈', '加密王师傅',
+    '电子猫猫', '虚空旅人', '像素拾荒者', '缓冲区幽灵',
+    '404NotFound', '神经网络猫', '递归函数','赛博仓鼠',
+  ], []);
+  const randomNameRef = useRef(0);
+  const getRandomViewerName = useCallback(() => {
+    randomNameRef.current += 1;
+    // 80%概率英文名，20%概率中文名（中文名在数组后半段，索引22+）
+    if (Math.random() < 0.8) {
+      return viewerNames[randomNameRef.current % 22]; // 前22个是英文名
+    }
+    return viewerNames[22 + (randomNameRef.current % (viewerNames.length - 22))];
+  }, [viewerNames]);
+
   const fireDanmakuBurst = useCallback((generator: () => string, count: number, allowOffensive = false) => {
     for (let i = 0; i < count; i++) {
       // 爆发时稍微错开时间，避免完全同步
@@ -240,6 +270,7 @@ export function LiveStage({ apiConfig, onBackToMenu, onBackToConfig, onGoShop }:
             round: presetIdRef.current,
             isPreset: true,
             isOffensive,
+            senderName: getRandomViewerName(),
           },
         ]);
       }, delay);
@@ -296,7 +327,7 @@ export function LiveStage({ apiConfig, onBackToMenu, onBackToConfig, onGoShop }:
             presetIdRef.current += 1;
             setPresetDanmaku((prev) => [
               ...prev,
-              { text, score: 0, round: presetIdRef.current, isPreset: true },
+              { text, score: 0, round: presetIdRef.current, isPreset: true, senderName: getRandomViewerName() },
             ]);
           }, delay);
           burstTimeoutIdsRef.current.add(tid);
@@ -399,7 +430,8 @@ export function LiveStage({ apiConfig, onBackToMenu, onBackToConfig, onGoShop }:
 
   const danmakuList = useMemo<DanmakuItem[]>(() => {
     // 每次 rounds 或 presetDanmaku 变化时重新读取 ref
-    return allDanmakuRef.current;
+    // 注入 _index 以便 DanmakuStream 切片后仍能正确双删除
+    return allDanmakuRef.current.map((item, i) => ({ ...item, _index: i }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listVersion]);
 
@@ -443,9 +475,52 @@ export function LiveStage({ apiConfig, onBackToMenu, onBackToConfig, onGoShop }:
     if (sentCountRef.current >= 10) {
       useAchievementStore.getState().unlock('danmaku_spammer');
     }
+    // 弹幕关键词成就检测
+    const lower = text.toLowerCase();
+    if (text.includes('原神')) useAchievementStore.getState().unlock('genshin_impact');
+    if (text.includes('狗头') || text.includes('🐶')) useAchievementStore.getState().unlock('dog_head');
+    if (lower.includes('awsl') || text.includes('啊我死了')) useAchievementStore.getState().unlock('awsl');
+    if (text.includes('666')) useAchievementStore.getState().unlock('double_666');
+    if (text.includes('腾讯')) useAchievementStore.getState().unlock('tencent_old_dry');
+    if (text.includes('老铁')) useAchievementStore.getState().unlock('lao_tie');
+    if (text.includes('鸣潮')) useAchievementStore.getState().unlock('mingchao');
+    if (text.length > 30) useAchievementStore.getState().unlock('long_text');
+    const emojiCount = (text.match(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{200D}\u{FE0F}]/gu) || []).length;
+    if (emojiCount >= 3) useAchievementStore.getState().unlock('emoji_master');
   }, [currentRound]);
 
   const isMobile = bp === 'mobile';
+  const [mobilePanel, setMobilePanel] = useState<'props' | 'scenes' | null>(null);
+  const [danmakuExpanded, setDanmakuExpanded] = useState(false);
+
+  // 手机端弹幕降速
+  useEffect(() => { setMobileDanmakuFactor(isMobile ? 2.2 : 1.0); }, [isMobile]);
+
+  // 手机端道具触摸拖拽状态
+  const [dragProp, setDragProp] = useState<{ key: PropKey; x: number; y: number; startX: number; startY: number } | null>(null);
+  const dragTouchIdRef = useRef<number | null>(null);
+
+  // ============================================================
+  // BOSS SC 弹窗（手机端：AI SuperChat 自动弹出）
+  // ============================================================
+  const [bossScPopup, setBossScPopup] = useState<DanmakuItem | null>(null);
+  const bossScTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastAiDanmakuCountRef = useRef(0);
+
+  // 监听新 AI 弹幕 → 弹出 BOSS SC 弹窗
+  useEffect(() => {
+    if (!isMobile) return;
+    const aiItems = danmakuList.filter((d) => !d.isPreset && !d.audienceOpening);
+    const currentCount = aiItems.length;
+    if (currentCount > lastAiDanmakuCountRef.current && currentCount > 0) {
+      const latest = aiItems[aiItems.length - 1];
+      setBossScPopup(latest);
+      // 自动关闭计时
+      if (bossScTimerRef.current) clearTimeout(bossScTimerRef.current);
+      bossScTimerRef.current = setTimeout(() => setBossScPopup(null), 8000);
+    }
+    lastAiDanmakuCountRef.current = currentCount;
+  }, [danmakuList, isMobile]);
 
   // 模拟在线人数（与绷不住值正相关 + 大幅随机波动，允许减少）
   // meterValue 0→base 8000, meterValue 100→base 35000
@@ -504,6 +579,81 @@ export function LiveStage({ apiConfig, onBackToMenu, onBackToConfig, onGoShop }:
     });
   }, []);
 
+  /** 手机端触摸拖拽开始 */
+  const handlePropTouchStart = useCallback((e: React.TouchEvent, key: PropKey) => {
+    const touch = e.touches[0];
+    dragTouchIdRef.current = touch.identifier;
+    setDragProp({ key, x: touch.clientX, y: touch.clientY, startX: touch.clientX, startY: touch.clientY });
+  }, []);
+
+  /** 手机端触摸拖拽移动 */
+  const handlePropTouchMove = useCallback((e: React.TouchEvent) => {
+    if (dragTouchIdRef.current === null) return;
+    const touch = Array.from(e.touches).find(t => t.identifier === dragTouchIdRef.current);
+    if (!touch) return;
+    setDragProp(prev => prev ? { ...prev, x: touch.clientX, y: touch.clientY } : null);
+  }, []);
+
+  /** 手机端放置道具（计算画布坐标） */
+  const placePropAtTouch = useCallback((clientX: number, clientY: number, key: PropKey) => {
+    const canvas = document.querySelector('.phaser-container canvas') as HTMLCanvasElement | null;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const relX = clientX - rect.left;
+    const relY = clientY - rect.top;
+    if (relX >= -20 && relY >= -20 && relX <= rect.width + 20 && relY <= rect.height + 20) {
+      const scaleX = 1280 / rect.width;
+      const scaleY = 960 / rect.height;
+      const worldX = Math.round(Math.max(0, Math.min(1280, relX * scaleX)));
+      const worldY = Math.round(Math.max(0, Math.min(960, relY * scaleY)));
+      eventBus.emit('request-place-prop', { key, x: worldX, y: worldY });
+      return true;
+    }
+    return false;
+  }, []);
+
+  /** 手机端触摸结束 */
+  const handlePropTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (!dragProp) return;
+    const touch = Array.from(e.changedTouches).find(t => t.identifier === dragTouchIdRef.current);
+    dragTouchIdRef.current = null;
+    if (touch) {
+      const dx = touch.clientX - dragProp.startX;
+      const dy = touch.clientY - dragProp.startY;
+      // 短距离触摸 = 点击放置（默认位置）
+      if (Math.abs(dx) < 15 && Math.abs(dy) < 15) {
+        handleMobilePlaceProp(dragProp.key);
+      } else {
+        placePropAtTouch(touch.clientX, touch.clientY, dragProp.key);
+      }
+    }
+    setDragProp(null);
+    setMobilePanel(null);
+  }, [dragProp, handleMobilePlaceProp, placePropAtTouch]);
+
+  /** 注入手机端 TikTok 弹幕动画 */
+  useEffect(() => {
+    if (!isMobile) return;
+    const id = 'tiktok-danmaku-keyframes';
+    if (document.getElementById(id)) return;
+    const style = document.createElement('style');
+    style.id = id;
+    style.textContent = `
+      @keyframes tiktok-fade-up {
+        0% { opacity: 0; transform: translateY(12px); }
+        10% { opacity: 0.75; transform: translateY(0); }
+        85% { opacity: 0.75; transform: translateY(0); }
+        100% { opacity: 0; transform: translateY(-6px); }
+      }
+      @keyframes tiktok-enter {
+        from { opacity: 0; transform: translateX(16px) scale(0.95); }
+        to { opacity: 1; transform: translateX(0) scale(1); }
+      }
+    `;
+    document.head.appendChild(style);
+    return () => { style.remove(); };
+  }, [isMobile]);
+
   const handleMobileSceneSelect = useCallback((key: SceneType) => {
     if (key === sceneType) return;
     if (!unlockedScenes.includes(key)) {
@@ -536,8 +686,10 @@ export function LiveStage({ apiConfig, onBackToMenu, onBackToConfig, onGoShop }:
       {/* 扫描线背景 */}
       <div className="absolute inset-0 scanlines pointer-events-none" />
 
-      {/* === 顶栏：直播间标题栏（OBS风格）=== */}
-      <div className="shrink-0 border-b border-game-border bg-game-surface/80 backdrop-blur-sm relative z-10">
+      {/* === 顶栏：直播间标题栏（桌面 OBS 风格 / 手机悬浮覆盖）=== */}
+      <div className={`shrink-0 border-b border-game-border bg-game-surface/80 backdrop-blur-sm relative z-10 ${
+        isMobile ? '!absolute !top-0 !left-0 !right-0 !z-30 !bg-gradient-to-b !from-black/85 !to-black/50 !backdrop-blur-md !border-game-border/20' : ''
+      }`}>
         <div className="panel-pattern" aria-hidden="true" />
         {/* 顶部霓虹条 */}
         <div className="h-[2px] bg-gradient-to-r from-accent via-accent-secondary to-accent-tertiary" />
@@ -605,6 +757,20 @@ export function LiveStage({ apiConfig, onBackToMenu, onBackToConfig, onGoShop }:
       {/* 错误提示 */}
       {visibleError && <ErrorBanner message={visibleError} onDismiss={dismissVisibleError} />}
 
+      {/* 手机端右上角提示按钮（live-stage 直接子级，避免被顶栏遮挡） */}
+      {isMobile && mode === 'story' && levelHint && (
+        <button
+          onClick={() => { sound.play('ui_button_press'); setShowLevelHint(!showLevelHint); }}
+          className="fixed top-3 right-3 z-[9995] touch-target w-11 h-11 flex items-center justify-center
+                     rounded-full bg-yellow-500/20 backdrop-blur-md border-2 border-yellow-400/60
+                     shadow-lg shadow-yellow-500/20
+                     active:bg-yellow-500/40 active:scale-90 transition-all
+                     animate-pulse"
+        >
+          <span className="text-xl">💡</span>
+        </button>
+      )}
+
       {/* === 主体区域：响应式布局 === */}
       <div
         className={`flex-1 min-h-0 flex overflow-hidden relative z-10 ${
@@ -617,172 +783,439 @@ export function LiveStage({ apiConfig, onBackToMenu, onBackToConfig, onGoShop }:
         {/* 场景设定选择栏（道具面板与画布之间） */}
         {!isMobile && <ScenePanel />}
 
-        {isMobile && (
-          <div className="shrink-0 border-b border-game-border bg-game-surface/80">
-            <div className="flex gap-2 overflow-x-auto px-2 py-2">
-              {mobileProps.map((key) => {
-                const manifest = PROP_MANIFEST[key];
-                const canAfford = points >= manifest.cost;
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    disabled={!canAfford}
-                    onClick={() => { sound.play('ui_button_press'); handleMobilePlaceProp(key); }}
-                    className={`shrink-0 w-[74px] border px-2 py-1 text-center transition-all ${
-                      canAfford
-                        ? 'border-game-border/60 bg-game-bg/60 text-game-text hover:border-accent hover:text-accent'
-                        : 'border-game-border/20 bg-game-bg/30 text-game-text-dim/40'
-                    }`}
-                  >
-                    <span className="block font-data text-xs truncate">{manifest.label}</span>
-                    <span className="block font-cyber text-[10px] text-accent/80">{manifest.cost}</span>
-                  </button>
-                );
-              })}
-            </div>
-            <div className="flex gap-2 overflow-x-auto px-2 pb-2">
-              {SCENE_CONFIGS.map((scene) => {
-                const selected = sceneType === scene.key;
-                const isUnlocked = unlockedScenes.includes(scene.key);
-                const canAfford = isUnlocked && (selected || points >= scene.cost);
-                return (
-                  <button
-                    key={scene.key}
-                    type="button"
-                    onClick={() => { sound.play('ui_button_press'); handleMobileSceneSelect(scene.key); }}
-                    className={`shrink-0 border px-3 py-1 font-data text-xs transition-all ${
-                      selected
-                        ? 'border-purple-300 bg-purple-500 text-black'
-                        : !isUnlocked
-                          ? 'border-game-border/20 bg-game-bg/30 text-game-text-dim/30 cursor-not-allowed'
-                        : canAfford
-                          ? 'border-game-border/50 bg-game-bg/40 text-game-text-dim hover:border-purple-300 hover:text-purple-300'
-                          : 'border-game-border/20 bg-game-bg/30 text-game-text-dim/30 cursor-not-allowed'
-                    }`}
-                  >
-                    <span className="block">{scene.labelCn}</span>
-                    <span className={`block text-[10px] ${canAfford ? 'text-accent/80' : 'text-danger/60'}`}>
-                      {!isUnlocked ? 'LOCK' : scene.cost === 0 ? 'FREE' : `${scene.cost}`}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Phaser 画布（舞台区域） + 浮层覆盖 */}
-        <div className={isMobile ? 'flex-[0_0_46%] min-h-[260px]' : 'flex-1 min-w-0 min-h-0'} data-tutorial="game-canvas">
-          <div className="h-full flex flex-col p-2">
-            {/* 舞台标题 */}
-            <div className="flex items-center justify-between mb-1 px-1 shrink-0">
-              <div className="flex items-center gap-2">
-                <div className="w-1 h-4 bg-accent" />
-                <span className="font-cyber text-[10px] text-accent tracking-wider">
-                  SESSION // {mode === 'story' ? 'STORY' : 'ENDLESS'}
-                </span>
-                <span className="status-icon hidden sm:inline-flex text-accent-tertiary" aria-hidden="true">CAM</span>
-              </div>
-              <span className="font-data text-[10px] text-game-text-dim">
-                LV{currentLevel} // {difficultyName}
-              </span>
-              {/* 关卡策略提示按钮 — 点击弹出独立弹窗 */}
-              {mode === 'story' && levelHint && (
-                <button
-                  onClick={() => { sound.play('ui_button_press'); setShowLevelHint(true); }}
-                  onMouseEnter={() => sound.play('ui_button_hover')}
-                  className="font-cyber text-[9px] tracking-wider px-2 py-0.5 rounded-sm border border-game-border/50 text-game-text-dim/50 hover:border-yellow-500/30 transition-all"
-                >
-                  💡 HINT
-                </button>
-              )}
-            </div>
-
-            {/* 关卡策略提示弹窗 — 不占用布局空间 */}
-            {showLevelHint && levelHint && (
-              <>
-                <div className="fixed inset-0 z-[9998]" onClick={() => setShowLevelHint(false)} />
-                <div className="absolute top-12 right-4 z-[9999] w-64 animate-fade-in">
-                  <div className="bg-game-surface border border-yellow-500/30 rounded-md p-3 shadow-lg shadow-yellow-900/20">
-                    <div className="flex items-start gap-2">
-                      <span className="text-lg shrink-0">💡</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-cyber text-[10px] text-yellow-400 tracking-wider mb-1">关卡提示</p>
-                        <p className="font-data text-[11px] text-yellow-100/80 leading-relaxed">{levelHint.hintTip}</p>
-                      </div>
-                      <button
-                        onClick={() => { sound.play('ui_button_press'); setShowLevelHint(false); }}
-                        className="text-yellow-400/50 hover:text-yellow-300 text-xs shrink-0"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* Phaser 画布 + 质检员浮层覆盖 */}
-            <div className="stage-reticle flex-1 min-h-0 relative overflow-hidden">
-              {/* 黄色四角装饰（底部两个角） */}
-              <div className="corner-bl" aria-hidden="true" />
-              <div className="corner-br" aria-hidden="true" />
+        {isMobile ? (
+          /* ============================================================
+             手机 TikTok 直播布局：
+             全屏画布 + 弹幕浮层覆盖 + 底部浮动工具栏
+             ============================================================ */
+          <>
+            {/* 全屏画布区 */}
+            <div className="flex-1 min-h-0 relative overflow-hidden">
               <div className="absolute inset-0">
                 <PhaserCanvas onPerform={handlePerform} disabled={isLoading} />
               </div>
 
-              {/* 引导标记：开始表演按钮区域（画布底部） */}
-              <div data-tutorial="game-perform-btn" className="absolute bottom-12 left-1/2 -translate-x-1/2 w-32 h-10 pointer-events-none" />
-
-              {/* 等待状态质检员条（静止覆盖底部） */}
-              <div className="absolute bottom-0 left-0 right-0 max-h-[38%] overflow-hidden">
+              {/* AI 质检员评论（底部覆盖） */}
+              <div className="absolute bottom-0 left-0 right-0 max-h-[38%] overflow-hidden z-10">
                 <AICommentCard />
               </div>
 
-              {/* 当前反应（表演中 - 覆盖底部，质检员条上方） */}
+              {/* 当前反应（表演中） */}
               {isLoading && reaction && (
-                <div className="absolute bottom-0 left-0 right-0 bg-black/80 backdrop-blur-sm border-t border-accent/40 animate-fade-in">
+                <div className="absolute bottom-0 left-0 right-0 bg-black/80 backdrop-blur-sm border-t border-accent/40 animate-fade-in z-10">
                   <div className="flex items-center gap-2 px-3 py-1.5">
                     <div className="w-1.5 h-1.5 bg-accent rounded-full animate-pulse shrink-0" />
-                    <span className="font-cyber text-[10px] text-accent tracking-wider shrink-0">PROCESSING // LAUGHING_MAN</span>
-                    <p className="text-sm text-accent font-data truncate">
-                      {reaction}
-                    </p>
+                    <span className="font-cyber text-[10px] text-accent tracking-wider shrink-0">PROCESSING</span>
+                    <p className="text-sm text-accent font-data truncate">{reaction}</p>
                   </div>
                 </div>
               )}
 
-              {/* 继续下一回合 — 舞台中央浮层 */}
+              {/* 继续下一回合按钮 */}
               {phase === 'editing' && rounds.length > 0 && judgeDismissedRound < rounds.length && (
                 <div className="absolute inset-0 flex items-center justify-center z-20 animate-fade-in">
                   <button
                     onClick={() => { sound.play('ui_button_press'); dismissJudgeCard(); }}
-                    onMouseEnter={() => sound.play('ui_button_hover')}
-                    className="px-6 py-3 border-2 border-accent bg-game-surface/90 backdrop-blur-md
-                               text-accent font-cyber text-xs tracking-widest
+                    className="px-4 py-2.5 border-2 border-accent bg-game-surface/90 backdrop-blur-md
+                               text-accent font-cyber text-[11px] tracking-widest
                                hover:bg-accent hover:text-black transition-all duration-300
-                               shadow-lg shadow-accent/20 active:scale-95"
+                               shadow-lg shadow-accent/20 active:scale-95 rounded-sm"
                   >
-                    ◈ 质检员已出报告 — 点击继续下一回合 ◈
+                    ◈ 质检员已出报告 — 继续 ◈
                   </button>
                 </div>
               )}
-            </div>
-          </div>
-        </div>
 
-        {/* 弹幕区（直播聊天面板）- 延长至满高度 */}
-        <div
-          className={`border-game-border overflow-hidden ${
-            isMobile
-              ? 'flex-1 min-h-0 border-t'
-              : 'flex-[0_0_30%] min-w-[280px] min-h-0 border-l'
-          }`}
-          data-tutorial="game-danmaku"
-        >
-          <DanmakuStream list={danmakuList} onRemove={handleRemoveDanmaku} onSendQuick={handleSendQuick} />
-        </div>
+              {/* 关卡提示弹窗（保持复用） */}
+              {showLevelHint && levelHint && (
+                isMobile ? (
+                  /* 手机端：居中弹窗 */
+                  <div className="fixed inset-0 z-[9998] flex items-center justify-center animate-fade-in">
+                    <div className="absolute inset-0 bg-black/70" onClick={() => { sound.play('ui_button_press'); setShowLevelHint(false); }} />
+                    <div className="relative mx-4 w-full max-w-[320px] rounded-xl overflow-hidden border-2 border-yellow-500/40 shadow-2xl shadow-yellow-500/20 animate-scale-in"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="bg-gradient-to-r from-yellow-600/90 via-yellow-500/80 to-amber-400/90 px-4 py-3 flex items-center gap-2">
+                        <span className="text-2xl">💡</span>
+                        <div className="flex-1">
+                          <p className="font-cyber text-sm text-black tracking-wider font-bold">关卡提示</p>
+                          {levelHint.viewerName && (
+                            <p className="font-data text-[10px] text-black/60">第 {currentLevel} 关</p>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => { sound.play('ui_button_press'); setShowLevelHint(false); }}
+                          className="text-black/50 hover:text-black text-lg touch-target"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                      <div className="bg-game-surface px-4 py-4">
+                        <p className="font-data text-sm text-yellow-100/90 leading-relaxed">
+                          {levelHint.hintTip}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  /* 桌面端：右上角小弹窗 */
+                  <>
+                    <div className="fixed inset-0 z-[9998]" onClick={() => setShowLevelHint(false)} />
+                    <div className="absolute top-4 right-4 z-[9999] w-56 animate-fade-in">
+                      <div className="bg-game-surface border border-yellow-500/30 rounded-md p-3 shadow-lg">
+                        <div className="flex items-start gap-2">
+                          <span className="text-lg shrink-0">💡</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-cyber text-[10px] text-yellow-400 tracking-wider mb-1">关卡提示</p>
+                            <p className="font-data text-[10px] text-yellow-100/80 leading-relaxed">{levelHint.hintTip}</p>
+                          </div>
+                          <button
+                            onClick={() => { sound.play('ui_button_press'); setShowLevelHint(false); }}
+                            className="text-yellow-400/50 hover:text-yellow-300 text-xs shrink-0"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )
+              )}
+
+              {/* 弹幕覆盖层（左下角透明滚动，TikTok 直播风格） */}
+              <div className="absolute bottom-12 left-0 right-0 z-15 pointer-events-none">
+                <div className="flex flex-col items-start px-2 py-1 gap-1 overflow-hidden" style={{ maxHeight: '38vh', maskImage: 'linear-gradient(to top, transparent 0%, black 15%, black 85%, transparent 100%)' }}>
+                  {danmakuList.slice(-8).reverse().map((item, i) => {
+                    const key = `tdk-${item.round}-${item.text?.slice(0,8) ?? ''}-${i}`;
+                    const realIndex = allDanmakuRef.current.length - 1 - i;
+                    return (
+                      <div
+                        key={key}
+                        className="px-2 py-0.5 rounded max-w-[82%] pointer-events-auto cursor-pointer select-none active:opacity-60 transition-opacity"
+                        style={{
+                          background: item.isPreset
+                            ? 'rgba(0,0,0,0.35)'
+                            : 'linear-gradient(90deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.2) 100%)',
+                          backdropFilter: 'blur(3px)',
+                          WebkitBackdropFilter: 'blur(3px)',
+                          animation: `tiktok-enter 0.3s ease-out both`,
+                        }}
+                        onDoubleClick={() => {
+                          sound.play('ui_button_press');
+                          handleRemoveDanmaku(realIndex);
+                        }}
+                        title="双击移除弹幕"
+                      >
+                        <p className={`leading-snug break-words font-data ${
+                          item.isPreset ? 'text-[11px] text-white/55' : 'text-[13px] text-white/80'
+                        }`}>
+                          {!item.isPreset && item.score >= 7 && (
+                            <span className="text-yellow-400 mr-1 text-[10px]">★{item.score}</span>
+                          )}
+                          <span className="text-white/55 text-[10px] mr-1">
+                            {item.senderName || '观众'}:
+                          </span>
+                          {item.text || '...'}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* 底部浮动工具栏（TikTok 风格） */}
+            <div className="absolute bottom-0 left-0 right-0 z-20 flex items-center justify-around py-2 px-3 bg-black/75 border-t border-game-border/20 backdrop-blur-md">
+              <button
+                onClick={() => { sound.play('ui_button_press'); setMobilePanel(mobilePanel === 'props' ? null : 'props'); setDanmakuExpanded(false); }}
+                className={`touch-target flex flex-col items-center gap-0.5 px-3 py-1 rounded-md transition-all ${
+                  mobilePanel === 'props' ? 'text-accent bg-accent/10 scale-110' : 'text-game-text-dim/70 active:text-accent active:scale-95'
+                }`}
+              >
+                <span className="text-lg">🛠</span>
+                <span className="font-data text-[10px]">道具</span>
+              </button>
+              <button
+                onClick={() => { sound.play('ui_button_press'); setMobilePanel(mobilePanel === 'scenes' ? null : 'scenes'); setDanmakuExpanded(false); }}
+                className={`touch-target flex flex-col items-center gap-0.5 px-3 py-1 rounded-md transition-all ${
+                  mobilePanel === 'scenes' ? 'text-accent-tertiary bg-accent-tertiary/10 scale-110' : 'text-game-text-dim/70 active:text-accent-tertiary active:scale-95'
+                }`}
+              >
+                <span className="text-lg">🎬</span>
+                <span className="font-data text-[10px]">场景</span>
+              </button>
+              <button
+                onClick={() => { sound.play('ui_button_press'); setMobilePanel(null); setDanmakuExpanded(!danmakuExpanded); }}
+                className={`touch-target flex flex-col items-center gap-0.5 px-3 py-1 rounded-md transition-all ${
+                  danmakuExpanded ? 'text-accent-secondary bg-accent-secondary/10 scale-110' : 'text-game-text-dim/70 active:text-accent-secondary active:scale-95'
+                }`}
+              >
+                <span className="text-lg">💬</span>
+                <span className="font-data text-[10px]">{danmakuExpanded ? '收 起' : '发弹幕'}</span>
+              </button>
+              <button
+                onClick={() => { sound.play('ui_button_press'); onBackToMenu(); }}
+                className="touch-target flex flex-col items-center gap-0.5 px-3 py-1 rounded-md transition-all text-game-text-dim/70 active:text-danger active:scale-95"
+              >
+                <span className="text-lg">🚪</span>
+                <span className="font-data text-[10px]">返回</span>
+              </button>
+            </div>
+
+            {/* 弹幕发送面板（展开时显示） */}
+            {danmakuExpanded && (
+              <div className="absolute bottom-14 left-0 right-0 z-25 animate-slide-up px-2" style={{ maxHeight: '44vh' }}>
+                <div className="rounded-md border border-game-border/40 bg-black/85 backdrop-blur-md flex flex-col overflow-hidden h-full">
+                  <DanmakuStream
+                    list={danmakuList.slice(-10)}
+                    onRemove={handleRemoveDanmaku}
+                    onSendQuick={handleSendQuick}
+                    compact
+                    compactExpanded={true}
+                  />
+                </div>
+              </div>
+            )}
+
+
+            {/* 道具选择底部弹出面板 */}
+            {mobilePanel === 'props' && (
+              <div 
+                className="absolute bottom-12 left-0 right-0 z-25 bg-game-surface/95 border-t border-game-border backdrop-blur-md animate-slide-up rounded-t-xl max-h-[55%] overflow-y-auto"
+                onTouchMove={handlePropTouchMove}
+                onTouchEnd={handlePropTouchEnd}
+              >
+                <div className="sticky top-0 flex items-center justify-between px-4 py-2.5 border-b border-game-border/30 bg-game-surface z-10">
+                  <span className="font-cyber text-xs text-accent tracking-wider">🛠 道具选择</span>
+                  <span className="font-data text-[10px] text-game-text-dim/40">长按拖拽到画布</span>
+                  <button
+                    onClick={() => { sound.play('ui_button_press'); setMobilePanel(null); }}
+                    className="font-cyber text-base text-game-text-dim/50 active:text-danger touch-target"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="grid grid-cols-4 gap-2 p-3">
+                  {mobileProps.map((key) => {
+                    const manifest = PROP_MANIFEST[key];
+                    const canAfford = points >= manifest.cost;
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        disabled={!canAfford}
+                        onTouchStart={(e) => { if (canAfford) handlePropTouchStart(e, key); }}
+                        className={`touch-target flex flex-col items-center gap-1 p-2 rounded-md text-center transition-all select-none ${
+                          canAfford
+                            ? 'border border-game-border/60 bg-game-bg/60 text-game-text active:border-accent active:bg-accent/10'
+                            : 'border border-game-border/20 bg-game-bg/30 text-game-text-dim/30'
+                        }`}
+                      >
+                        <span className="font-data text-[11px] leading-tight pointer-events-none">{manifest.label}</span>
+                        <span className={`font-cyber text-[9px] pointer-events-none ${canAfford ? 'text-accent/80' : 'text-danger/50'}`}>
+                          {manifest.cost}💰
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* 场景选择底部弹出面板 */}
+            {mobilePanel === 'scenes' && (
+              <div className="absolute bottom-12 left-0 right-0 z-25 bg-game-surface/95 border-t border-game-border backdrop-blur-md animate-slide-up rounded-t-xl max-h-[55%] overflow-y-auto">
+                <div className="sticky top-0 flex items-center justify-between px-4 py-2.5 border-b border-game-border/30 bg-game-surface z-10">
+                  <span className="font-cyber text-xs text-accent-tertiary tracking-wider">🎬 场景切换</span>
+                  <button
+                    onClick={() => { sound.play('ui_button_press'); setMobilePanel(null); }}
+                    className="font-cyber text-base text-game-text-dim/50 active:text-danger touch-target"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="grid grid-cols-3 gap-2 p-3">
+                  {SCENE_CONFIGS.map((scene) => {
+                    const selected = sceneType === scene.key;
+                    const isUnlocked = unlockedScenes.includes(scene.key);
+                    const canAfford = isUnlocked && (selected || points >= scene.cost);
+                    return (
+                      <button
+                        key={scene.key}
+                        type="button"
+                        onClick={() => { sound.play('ui_button_press'); handleMobileSceneSelect(scene.key); setMobilePanel(null); }}
+                        className={`touch-target flex flex-col items-center gap-1 p-2 rounded-md transition-all ${
+                          selected
+                            ? 'border-2 border-purple-400 bg-purple-500/80 text-black'
+                            : !isUnlocked
+                              ? 'border border-game-border/20 bg-game-bg/30 text-game-text-dim/30'
+                            : canAfford
+                              ? 'border border-game-border/50 bg-game-bg/40 text-game-text-dim active:border-purple-300 active:text-purple-300'
+                              : 'border border-game-border/20 bg-game-bg/30 text-game-text-dim/30'
+                        }`}
+                      >
+                        <span className="font-data text-[11px]">{scene.labelCn}</span>
+                        <span className={`font-cyber text-[9px] ${canAfford ? 'text-accent/80' : 'text-danger/60'}`}>
+                          {!isUnlocked ? 'LOCK' : scene.cost === 0 ? 'FREE' : `${scene.cost}💰`}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* BOSS SC 弹窗（手机端：AI SuperChat 自动居中弹出） */}
+            {bossScPopup && (
+              <div className="absolute inset-0 z-40 flex items-center justify-center animate-fade-in" onClick={() => { sound.play('ui_button_press'); setBossScPopup(null); }}>
+                <div className="absolute inset-0 bg-black/60" />
+                <div className="relative mx-4 w-full max-w-[340px] rounded-xl overflow-hidden border-2 border-yellow-500/60 shadow-2xl shadow-yellow-500/20 animate-scale-in"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* SC 头部 */}
+                  <div className="bg-gradient-to-r from-yellow-600 via-yellow-500 to-amber-400 px-4 py-2.5 flex items-center gap-2">
+                    <span className="text-lg">⭐</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-cyber text-[11px] text-black tracking-wider">
+                        {bossScPopup.senderName || '匿名观众'} 的 Super Chat
+                      </p>
+                      <p className="font-data text-[10px] text-black/70">
+                        ¥{bossScPopup.score * 10}.00
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => { sound.play('ui_button_press'); setBossScPopup(null); }}
+                      className="text-black/60 hover:text-black text-base touch-target"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  {/* SC 内容 */}
+                  <div className="bg-game-surface px-4 py-3">
+                    <p className="font-data text-sm text-white/90 leading-relaxed">
+                      {bossScPopup.text || '...'}
+                    </p>
+                    {bossScPopup.pointsReward !== undefined && (
+                      <div className="mt-2 flex items-center gap-2 text-[10px] text-accent/80">
+                        <span>💰</span>
+                        <span className="font-cyber">+{bossScPopup.pointsReward} 头肯</span>
+                      </div>
+                    )}
+                  </div>
+                  {/* 自动关闭进度条 */}
+                  <div className="h-[2px] bg-game-border/30">
+                    <div className="h-full bg-gradient-to-r from-yellow-500 to-amber-400 animate-shrink-width" />
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          /* ============================================================
+             桌面布局（保持原样）
+             ============================================================ */
+          <>
+            {/* Phaser 画布（舞台区域） + 浮层覆盖 */}
+            <div className="flex-1 min-w-0 min-h-0" data-tutorial="game-canvas">
+              <div className="h-full flex flex-col p-2">
+                {/* 舞台标题 */}
+                <div className="flex items-center justify-between mb-1 px-1 shrink-0">
+                  <div className="flex items-center gap-2">
+                    <div className="w-1 h-4 bg-accent" />
+                    <span className="font-cyber text-[10px] text-accent tracking-wider">
+                      SESSION // {mode === 'story' ? 'STORY' : 'ENDLESS'}
+                    </span>
+                    <span className="status-icon hidden sm:inline-flex text-accent-tertiary" aria-hidden="true">CAM</span>
+                  </div>
+                  <span className="font-data text-[10px] text-game-text-dim">
+                    LV{currentLevel} // {difficultyName}
+                  </span>
+                  {/* 关卡策略提示按钮 */}
+                  {mode === 'story' && levelHint && (
+                    <button
+                      onClick={() => { sound.play('ui_button_press'); setShowLevelHint(true); }}
+                      onMouseEnter={() => sound.play('ui_button_hover')}
+                      className="font-cyber text-[9px] tracking-wider px-2 py-0.5 rounded-sm border border-game-border/50 text-game-text-dim/50 hover:border-yellow-500/30 transition-all"
+                    >
+                      💡 HINT
+                    </button>
+                  )}
+                </div>
+
+                {/* 关卡策略提示弹窗 */}
+                {showLevelHint && levelHint && (
+                  <>
+                    <div className="fixed inset-0 z-[9998]" onClick={() => setShowLevelHint(false)} />
+                    <div className="absolute top-12 right-4 z-[9999] w-64 animate-fade-in">
+                      <div className="bg-game-surface border border-yellow-500/30 rounded-md p-3 shadow-lg shadow-yellow-900/20">
+                        <div className="flex items-start gap-2">
+                          <span className="text-lg shrink-0">💡</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-cyber text-[10px] text-yellow-400 tracking-wider mb-1">关卡提示</p>
+                            <p className="font-data text-[11px] text-yellow-100/80 leading-relaxed">{levelHint.hintTip}</p>
+                          </div>
+                          <button
+                            onClick={() => { sound.play('ui_button_press'); setShowLevelHint(false); }}
+                            className="text-yellow-400/50 hover:text-yellow-300 text-xs shrink-0"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Phaser 画布 + 质检员浮层覆盖 */}
+                <div className="stage-reticle flex-1 min-h-0 relative overflow-hidden">
+                  <div className="corner-bl" aria-hidden="true" />
+                  <div className="corner-br" aria-hidden="true" />
+                  <div className="absolute inset-0">
+                    <PhaserCanvas onPerform={handlePerform} disabled={isLoading} />
+                  </div>
+
+                  <div data-tutorial="game-perform-btn" className="absolute bottom-12 left-1/2 -translate-x-1/2 w-32 h-10 pointer-events-none" />
+
+                  <div className="absolute bottom-0 left-0 right-0 max-h-[38%] overflow-hidden">
+                    <AICommentCard />
+                  </div>
+
+                  {isLoading && reaction && (
+                    <div className="absolute bottom-0 left-0 right-0 bg-black/80 backdrop-blur-sm border-t border-accent/40 animate-fade-in">
+                      <div className="flex items-center gap-2 px-3 py-1.5">
+                        <div className="w-1.5 h-1.5 bg-accent rounded-full animate-pulse shrink-0" />
+                        <span className="font-cyber text-[10px] text-accent tracking-wider shrink-0">PROCESSING // LAUGHING_MAN</span>
+                        <p className="text-sm text-accent font-data truncate">
+                          {reaction}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {phase === 'editing' && rounds.length > 0 && judgeDismissedRound < rounds.length && (
+                    <div className="absolute inset-0 flex items-center justify-center z-20 animate-fade-in">
+                      <button
+                        onClick={() => { sound.play('ui_button_press'); dismissJudgeCard(); }}
+                        onMouseEnter={() => sound.play('ui_button_hover')}
+                        className="px-6 py-3 border-2 border-accent bg-game-surface/90 backdrop-blur-md
+                                   text-accent font-cyber text-xs tracking-widest
+                                   hover:bg-accent hover:text-black transition-all duration-300
+                                   shadow-lg shadow-accent/20 active:scale-95"
+                      >
+                        ◈ 质检员已出报告 — 点击继续下一回合 ◈
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* 弹幕区（桌面侧边栏） */}
+            <div className="flex-[0_0_30%] min-w-[280px] min-h-0 border-l border-game-border overflow-hidden" data-tutorial="game-danmaku">
+              <DanmakuStream list={danmakuList} onRemove={handleRemoveDanmaku} onSendQuick={handleSendQuick} />
+            </div>
+          </>
+        )}
       </div>
 
       {/* 结算弹窗 - 用 key 强制重新挂载，确保 phase=result 时组件全新渲染 */}
@@ -796,6 +1229,25 @@ export function LiveStage({ apiConfig, onBackToMenu, onBackToConfig, onGoShop }:
           <span className="font-data text-xs text-game-text-dim">
             [ DATA_SAVED ] 进度已自动保存至本地存储
           </span>
+        </div>
+      )}
+
+      {/* 手机端拖拽幽灵道具（跟随手指） */}
+      {isMobile && dragProp && (
+        <div
+          className="fixed pointer-events-none z-[9999]"
+          style={{
+            left: dragProp.x - 28,
+            top: dragProp.y - 28,
+            width: 56,
+            height: 56,
+          }}
+        >
+          <div className="w-full h-full rounded-lg border-2 border-accent bg-accent/20 backdrop-blur-sm flex items-center justify-center shadow-lg shadow-accent/30 animate-pulse">
+            <span className="font-data text-[11px] text-accent font-bold">
+              {PROP_MANIFEST[dragProp.key]?.label ?? dragProp.key}
+            </span>
+          </div>
         </div>
       )}
 

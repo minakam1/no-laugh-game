@@ -33,6 +33,15 @@ export type AchievementId =
   | 'danmaku_spammer'    // 发10条快捷弹幕
   | 'danmaku_sweeper'    // 删5条弹幕
   | 'danmaku_cleaner'    // 删3条攻击性弹幕
+  | 'genshin_impact'     // 弹幕发"原神"
+  | 'dog_head'           // 弹幕含"狗头"
+  | 'awsl'               // 弹幕含"awsl"/"啊我死了"
+  | 'double_666'         // 弹幕含"666"
+  | 'tencent_old_dry'    // 弹幕含"腾讯"
+  | 'long_text'          // 单条弹幕超30字
+  | 'emoji_master'       // 单条弹幕含3+emoji
+  | 'lao_tie'            // 弹幕含"老铁"
+  | 'mingchao'           // 弹幕含"鸣潮"
   // === BOSS挑战 ===
   | 'boss1_clear'        // LV1快乐小狗通关（普通）
   | 'boss1_fail'         // LV1快乐小狗失败（普通）
@@ -98,6 +107,15 @@ export const ACHIEVEMENTS: Record<AchievementId, Achievement> = {
   danmaku_spammer:     { id: 'danmaku_spammer',  title: '弹幕刷子',     desc: '累计发送 10 条快捷弹幕',                    icon: '📣' },
   danmaku_sweeper:     { id: 'danmaku_sweeper',  title: '房管执法',     desc: '累计删除 5 条弹幕',                       icon: '🧹' },
   danmaku_cleaner:     { id: 'danmaku_cleaner',  title: '净化直播间',   desc: '累计删除 3 条攻击性弹幕',                   icon: '🚫' },
+  genshin_impact:      { id: 'genshin_impact',   title: '原神，启动！',  desc: '弹幕中发送「原神」',                       icon: '🎮' },
+  dog_head:            { id: 'dog_head',         title: '狗头保命',     desc: '弹幕中发送「狗头」或🐶',                 icon: '🐶' },
+  awsl:                { id: 'awsl',             title: '阿伟乱葬岗',   desc: '弹幕中发送「awsl」或「啊我死了」',         icon: '💀' },
+  double_666:          { id: 'double_666',       title: '666666',   desc: '弹幕中发送「666」',                       icon: '👍' },
+  tencent_old_dry:     { id: 'tencent_old_dry',  title: '腾讯老干妈',   desc: '弹幕中发送「腾讯」',                       icon: '🌶️' },
+  long_text:           { id: 'long_text',        title: '小作文选手',   desc: '单条弹幕超过 30 个字',                    icon: '📝' },
+  emoji_master:        { id: 'emoji_master',     title: '表情包大师',   desc: '单条弹幕包含 3 个以上 emoji',              icon: '😎' },
+  lao_tie:             { id: 'lao_tie',          title: '来了老铁！',    desc: '弹幕中发送「老铁」',                       icon: '🤝' },
+  mingchao:            { id: 'mingchao',         title: '鸣潮，启动！',  desc: '弹幕中发送「鸣潮」',                       icon: '🌊' },
   // === BOSS 挑战 ===
   boss1_clear:         { id: 'boss1_clear',      title: '撸狗达人',     desc: '普通模式首次逗笑 快乐小狗',                 icon: '🐶' },
   boss1_fail:          { id: 'boss1_fail',       title: '被狗溜了',     desc: '普通模式首次败给 快乐小狗',                 icon: '🦴' },

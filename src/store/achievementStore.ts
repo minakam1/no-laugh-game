@@ -11,6 +11,8 @@ import type { PropKey } from '@/phaser/assets/manifest';
 interface AchievementState {
   /** 已解锁成就集合 */
   unlocked: Set<AchievementId>;
+  /** 是否正在从存档恢复（跳过弹窗） */
+  _restoring: boolean;
   /** 跨回合追踪数据 */
   track: {
     usedPropTypes: Set<PropKey>;
@@ -89,6 +91,7 @@ function createInitialTrack(): AchievementState['track'] {
 
 export const useAchievementStore = create<AchievementState & AchievementActions>((set, get) => ({
   unlocked: new Set(),
+  _restoring: false,
   track: createInitialTrack(),
 
   unlock: (id) => {
@@ -254,9 +257,13 @@ export const useAchievementStore = create<AchievementState & AchievementActions>
 
   markCollector: () => get().unlock('collector'),
 
-  loadFromSave: (ids) => set({ unlocked: new Set(ids) }),
+  loadFromSave: (ids) => {
+    set({ _restoring: true });
+    set({ unlocked: new Set(ids) });
+    setTimeout(() => set({ _restoring: false }), 0);
+  },
 
   getSaveData: () => Array.from(get().unlocked),
 
-  resetAchievements: () => set({ unlocked: new Set(), track: createInitialTrack() }),
+  resetAchievements: () => set({ unlocked: new Set(), _restoring: false, track: createInitialTrack() }),
 }));

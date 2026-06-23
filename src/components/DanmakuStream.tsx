@@ -30,6 +30,12 @@ interface DanmakuStreamProps {
   onRemove?: (index: number) => void;
   /** 用户发送快捷弹幕回调 */
   onSendQuick?: (text: string) => void;
+  /** 手机直播覆盖模式：半透明浮层、默认收起 */
+  compact?: boolean;
+  /** compact 模式下是否展开 */
+  compactExpanded?: boolean;
+  /** compact 模式下切换展开 */
+  onCompactToggle?: () => void;
 }
 
 /** 快捷弹幕模板 */
@@ -42,6 +48,14 @@ const QUICK_DANMAKU = [
   '👏 好活当赏',
   '🫡 致敬传奇',
   '🤣 哈哈哈哈',
+  '🎮 原神，启动！',
+  '🐶 狗头保命',
+  '🫠 人麻了',
+  '⚡ 太燃了',
+  '🎪 好戏登场',
+  '🤝 来了老铁',
+  '🌟 名场面预定',
+  '🍌 整活达人',
 ];
 
 // 生成随机观众名
@@ -52,10 +66,22 @@ const viewerNames = [
   'CodeBreaker', 'DigitalSoul', 'MatrixMage', 'FluxCapacitor',
   'SteinsGater_048', 'ChiralWalker_21', 'NERV_Operator_01',
   'SpaceCowboy_Bebop', 'LaughingMan_001', 'Vash_Stampede_$60B',
+  '赛博阿乐', '霓虹小七', '全息老陈', '加密王师傅',
+  '电子猫猫', '虚空旅人', '像素拾荒者', '缓冲区幽灵',
+  '404NotFound', '神经网络猫', '递归函数', '赛博仓鼠',
+  '全息投影仪', '量子阿伟', '暗网小明', '机械鸽子',
+  '防火墙', '大模型玩家', '云原生小黑', '复制粘贴侠',
+  '终端摸鱼怪', '内核崩溃', 'AI质检员007', '弹幕包工头',
+  '吃瓜一线', '潜水艇驾驶员', '键盘仙人', '人间清醒君',
 ];
 
+const EN_NAME_COUNT = 22; // 前22个是英文名
 const getViewerName = (round: number) => {
-  return viewerNames[round % viewerNames.length];
+  // 80%概率英文名，20%概率中文名
+  if (Math.random() < 0.8) {
+    return viewerNames[round % EN_NAME_COUNT];
+  }
+  return viewerNames[EN_NAME_COUNT + (round % (viewerNames.length - EN_NAME_COUNT))];
 };
 
 // 随机头像色
@@ -86,7 +112,7 @@ function getDanmakuKey(item: DanmakuItem): string {
   return `${item.round}-${Math.abs(hash)}-${item.isPreset ? 'p' : 'a'}`;
 }
 
-export function DanmakuStream({ list, onRemove, onSendQuick }: DanmakuStreamProps) {
+export function DanmakuStream({ list, onRemove, onSendQuick, compact, compactExpanded, onCompactToggle }: DanmakuStreamProps) {
   const sound = getSoundManager();
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -113,6 +139,9 @@ export function DanmakuStream({ list, onRemove, onSendQuick }: DanmakuStreamProp
     setQuickOpen(false);
   }, [onSendQuick, sound]);
 
+  // compact 模式下只显示最后几条消息
+  const displayList = compact ? list.slice(-5) : list;
+
   const getScoreColor = (score: number): string => {
     if (score >= 8) return 'text-accent';
     if (score >= 6) return 'text-warning';
@@ -129,35 +158,52 @@ export function DanmakuStream({ list, onRemove, onSendQuick }: DanmakuStreamProp
   };
 
   return (
-    <div className="flex flex-col h-full bg-game-surface/50 relative overflow-hidden">
-      <div className="panel-pattern" aria-hidden="true" />
+    <div className={`flex flex-col ${compact ? 'flex-1 min-h-0 bg-transparent' : 'h-full bg-game-surface/50'} relative ${compact ? '' : 'overflow-hidden'}`}>
+      {!compact && <div className="panel-pattern" aria-hidden="true" />}
+
       {/* 聊天面板头部 */}
-      <div className="px-3 py-2 border-b border-game-border flex items-center justify-between shrink-0">
+      <div className={`px-3 py-2 border-b border-game-border flex items-center justify-between shrink-0 ${
+        compact ? 'bg-black/60 backdrop-blur-md rounded-t-md' : ''
+      }`}>
         <div className="flex items-center gap-2">
           <div className="w-1.5 h-1.5 bg-accent rounded-full animate-pulse" />
           <span className="font-cyber text-[10px] text-accent tracking-wider">LIVE CHAT</span>
           <span className="status-icon hidden xl:inline-flex text-accent-tertiary" aria-hidden="true">MSG</span>
         </div>
-        <span className="font-data text-[10px] text-game-text-dim">
-          {list.length} MESSAGES
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="font-data text-[10px] text-game-text-dim">
+            {list.length} MESSAGES
+          </span>
+          {compact && onCompactToggle && (
+            <button
+              onClick={() => { sound.play('ui_button_press'); onCompactToggle(); }}
+              className="font-cyber text-[10px] text-accent/70 hover:text-accent px-2 py-0.5 border border-accent/30 rounded-sm"
+            >
+              {compactExpanded ? '收起' : '展开'}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* 聊天消息区 */}
-      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-3 py-2 space-y-2">
-        {list.length === 0 && (
-          <div className="text-center py-8">
-            <p className="font-data text-sm text-game-text-dim">
-              [ 聊天室为空 ]
-            </p>
-            <p className="font-data text-xs text-game-text-dim/50 mt-1">
-              开始表演，弹幕马上来！
-            </p>
-          </div>
-        )}
-        {list.map((item, i) => {
+      {(!compact || compactExpanded) && (
+        <div ref={scrollRef} className={`flex-1 min-h-0 overflow-y-auto px-3 py-2 space-y-2 ${
+          compact ? 'bg-black/40 backdrop-blur-sm' : ''
+        }`}>
+          {displayList.length === 0 && (
+            <div className="text-center py-8">
+              <p className="font-data text-sm text-game-text-dim">
+                [ 聊天室为空 ]
+              </p>
+              <p className="font-data text-xs text-game-text-dim/50 mt-1">
+                开始表演，弹幕马上来！
+              </p>
+            </div>
+          )}
+          {displayList.map((item, i) => {
           const viewerName = item.senderName || getViewerName(item.round + i);
           const avatarColor = getAvatarColor(item.round + i);
+          const realIdx = item._index ?? i;
 
           // 预设弹幕：淡化、无头像、无分数
           if (item.isPreset) {
@@ -171,7 +217,7 @@ export function DanmakuStream({ list, onRemove, onSendQuick }: DanmakuStreamProp
                     ? 'opacity-90 bg-accent/5 border-l-2 border-accent/40 pl-2 rounded-r'
                     : 'opacity-30 hover:opacity-60'
                 }`}
-                onDoubleClick={() => handleDoubleClick(i)}
+                onDoubleClick={() => handleDoubleClick(realIdx)}
                 title="双击移除"
               >
                 <p className={`text-xs leading-relaxed break-words font-data ${
@@ -193,7 +239,7 @@ export function DanmakuStream({ list, onRemove, onSendQuick }: DanmakuStreamProp
               <div
                 key={getDanmakuKey(item)}
                 className="animate-danmaku-scroll group cursor-pointer"
-                onDoubleClick={() => handleDoubleClick(i)}
+                onDoubleClick={() => handleDoubleClick(realIdx)}
                 title="双击移除"
               >
                 <div className="relative rounded-md overflow-hidden animate-super-chat-enter border border-game-border/70 bg-game-bg/75">
@@ -241,7 +287,7 @@ export function DanmakuStream({ list, onRemove, onSendQuick }: DanmakuStreamProp
             <div
               key={getDanmakuKey(item)}
               className="animate-danmaku-scroll group cursor-pointer"
-              onDoubleClick={() => handleDoubleClick(i)}
+              onDoubleClick={() => handleDoubleClick(realIdx)}
               title="双击移除"
             >
               {/* Super Chat 卡片：金色渐变边框 + 发光背景 + 入场动画 */}
@@ -335,64 +381,71 @@ export function DanmakuStream({ list, onRemove, onSendQuick }: DanmakuStreamProp
             </div>
           );
         })}
-      </div>
-
-      {/* 弹幕发送栏 */}
-      <div className="px-2 py-2 border-t border-game-border shrink-0 relative">
-        <div className="flex items-center gap-1.5">
-          {/* 快捷弹幕按钮 */}
-          <button
-            onClick={() => { sound.play('ui_button_press'); setQuickOpen(!quickOpen); }}
-            onMouseEnter={() => sound.play('ui_button_hover')}
-            className={`w-7 h-7 flex items-center justify-center border rounded-sm shrink-0 transition-colors font-cyber text-[9px] tracking-wider
-                       ${quickOpen ? 'bg-accent/15 border-accent/50 text-accent' : 'bg-accent/5 border-accent/20 text-accent/60 hover:border-accent/40'}`}
-          >
-            QCK
-          </button>
-
-          {/* 输入框 */}
-          <input
-            type="text"
-            value={customText}
-            onChange={(e) => setCustomText(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleSend(customText); }}
-            placeholder="发送弹幕..."
-            maxLength={50}
-            className="flex-1 h-7 px-2 bg-game-bg border border-game-border text-game-text font-data text-[11px]
-                       placeholder:text-game-text-dim/30 focus:outline-none focus:border-accent/50 rounded-sm"
-          />
-
-          {/* 发送按钮 */}
-          <button
-            onClick={() => handleSend(customText)}
-            disabled={!customText.trim()}
-            className="px-3 h-7 bg-accent/10 border border-accent/30 text-accent font-cyber text-[10px]
-                       hover:bg-accent/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors rounded-sm shrink-0"
-          >
-            SEND
-          </button>
         </div>
+      )}
 
-        {/* 快捷弹幕弹出菜单 */}
-        {quickOpen && (
-          <div className="absolute bottom-full left-2 right-2 mb-1 bg-game-surface border border-game-border rounded-sm shadow-lg z-10 p-2 animate-fade-in">
-            <div className="grid grid-cols-2 gap-1">
-              {QUICK_DANMAKU.map((msg) => (
-                <button
-                  key={msg}
-                  onClick={() => handleSend(msg)}
-                  onMouseEnter={() => sound.play('ui_button_hover')}
-                  className="text-left px-2 py-1.5 bg-game-bg border border-game-border hover:border-accent/40
-                             hover:bg-accent/5 text-game-text-dim hover:text-accent font-data text-[10px]
-                             transition-all rounded-sm truncate"
-                >
-                  {msg}
-                </button>
-              ))}
-            </div>
+      {/* 弹幕发送栏（compact 模式下收起时隐藏） */}
+      {(!compact || compactExpanded) && (
+        <div className={`px-2 py-2 border-t border-game-border shrink-0 relative ${compact ? 'bg-black/60' : ''}`}>
+          <div className="flex items-center gap-1.5">
+            {/* 快捷弹幕按钮 */}
+            <button
+              onClick={() => { sound.play('ui_button_press'); setQuickOpen(!quickOpen); }}
+              onMouseEnter={() => sound.play('ui_button_hover')}
+              className={`w-7 h-7 flex items-center justify-center border rounded-sm shrink-0 transition-colors font-cyber text-[9px] tracking-wider
+                         ${quickOpen ? 'bg-accent/15 border-accent/50 text-accent' : 'bg-accent/5 border-accent/20 text-accent/60 hover:border-accent/40'}`}
+            >
+              QCK
+            </button>
+
+            {/* 输入框 */}
+            <input
+              type="text"
+              value={customText}
+              onChange={(e) => setCustomText(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleSend(customText); }}
+              placeholder="发送弹幕..."
+              maxLength={50}
+              className="flex-1 h-7 px-2 bg-game-bg border border-game-border text-game-text font-data text-[11px]
+                         placeholder:text-game-text-dim/30 focus:outline-none focus:border-accent/50 rounded-sm"
+            />
+
+            {/* 发送按钮 */}
+            <button
+              onClick={() => handleSend(customText)}
+              disabled={!customText.trim()}
+              className="px-3 h-7 bg-accent/10 border border-accent/30 text-accent font-cyber text-[10px]
+                         hover:bg-accent/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors rounded-sm shrink-0"
+            >
+              SEND
+            </button>
           </div>
-        )}
-      </div>
+
+          {/* 快捷弹幕弹出菜单 */}
+          {quickOpen && (
+            <div className={`bg-game-surface border border-game-border rounded-sm shadow-lg z-50 p-2 animate-fade-in ${
+              compact
+                ? 'fixed bottom-[4.2rem] left-4 right-4'
+                : 'absolute bottom-full left-2 right-2 mb-1'
+            }`}>
+              <div className="grid grid-cols-2 gap-1">
+                {QUICK_DANMAKU.map((msg) => (
+                  <button
+                    key={msg}
+                    onClick={() => handleSend(msg)}
+                    onMouseEnter={() => sound.play('ui_button_hover')}
+                    className="text-left px-2 py-1.5 bg-game-bg border border-game-border hover:border-accent/40
+                               hover:bg-accent/5 text-game-text-dim hover:text-accent font-data text-[10px]
+                               transition-all rounded-sm truncate"
+                  >
+                    {msg}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

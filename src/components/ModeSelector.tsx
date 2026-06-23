@@ -419,7 +419,7 @@ export function ModeSelector({ hasSave, saveData, onContinue, onStart, onEditApi
       {showAchievements && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center bg-game-bg/80 backdrop-blur-sm"
              onClick={() => setShowAchievements(false)}>
-          <div className="cyber-panel cyber-corner w-[500px] max-h-[70vh] overflow-hidden flex flex-col"
+          <div className="cyber-panel cyber-corner w-[92vw] max-w-[500px] max-h-[70vh] overflow-hidden flex flex-col"
                onClick={(e) => e.stopPropagation()}>
             <div className="panel-pattern" aria-hidden="true" />
             {/* 头部 */}
